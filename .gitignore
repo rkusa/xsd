@@ -1,8 +1,5 @@
-target
-**/*.rs.bk
 .*
 !.gitignore
-!.dockerignore
-!.env.example
-env.production
+!.github
+target
 expand.rs
