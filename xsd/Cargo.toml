@@ -1,0 +1,14 @@
+[package]
+name = "xsd"
+version = "0.1.0"
+authors = ["Markus Ast <m@rkusa.st>"]
+edition = "2018"
+
+[dependencies]
+roxmltree = "0.13"
+thiserror = "1.0"
+xsd-derive = { path = "../xsd-derive" }
+
+[dev-dependencies]
+pretty_assertions = "0.6"
+xml-rs = "0.8"
