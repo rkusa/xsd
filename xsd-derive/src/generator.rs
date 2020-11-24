@@ -1,13 +1,11 @@
-mod error;
-
 use std::collections::HashMap;
 use std::{fs::read_to_string, path::Path};
 
-use crate::types::{
+use crate::ast::{
     get_xml_name, ElementContent, ElementDefault, FromXmlImpl, Kind, ToImpl, ToXmlImpl,
 };
+use crate::error::GeneratorError;
 use crate::xsd::Schema;
-use error::GeneratorError;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};

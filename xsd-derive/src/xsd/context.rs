@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::lazy::Lazy;
 use super::node::{Attribute, Node};
 use super::XsdError;
-use crate::types::{Kind, LeafContent, LiteralType, Name, Namespace};
+use crate::ast::{Kind, LeafContent, LiteralType, Name, Namespace};
 
 pub struct Context<'a, 'input> {
     simple_types: HashMap<Name, Lazy<'a, 'input>>,

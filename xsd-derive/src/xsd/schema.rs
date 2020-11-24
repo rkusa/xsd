@@ -5,7 +5,7 @@ use roxmltree::{Document, TextPos};
 use super::context::{Context, NS_XSD};
 use super::error::{Error, XsdError};
 use super::node::Node;
-use crate::types::{ElementDefinition, Kind, Name, Namespace};
+use crate::ast::{ElementDefinition, Kind, Name, Namespace};
 
 pub struct Schema {
     elements: HashMap<Name, ElementDefinition>,

@@ -1,7 +1,8 @@
 // #![allow(unused)]
 
+mod ast;
+mod error;
 mod generator;
-mod types;
 mod xsd;
 
 use std::env;

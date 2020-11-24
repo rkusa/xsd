@@ -4,7 +4,7 @@ use std::ops::Range;
 use super::context::Context;
 use super::error::XsdError;
 use super::node::Node;
-use crate::types::{ElementDefinition, Kind, Name, Namespace};
+use crate::ast::{ElementDefinition, Kind, Name, Namespace};
 
 pub struct Lazy<'a, 'input> {
     name: String,

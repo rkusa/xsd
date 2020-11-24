@@ -1,4 +1,4 @@
-use crate::types::{ElementContent, ElementDefinition, Kind, LeafContent, Name};
+use crate::ast::{ElementContent, ElementDefinition, Kind, LeafContent, Name};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
