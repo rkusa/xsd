@@ -1,6 +1,8 @@
 use crate::generator::escape_ident;
 
-use super::{Element, ElementDefault, FromXmlImpl, Literal, Namespaces, ToXmlImpl};
+use super::{
+    get_xml_name, Element, ElementDefault, FromXmlImpl, Literal, Namespace, Namespaces, ToXmlImpl,
+};
 use super::{State, ToImpl};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
@@ -33,7 +35,7 @@ impl ToXmlImpl for ElementContent {
                     .iter()
                     .map(|el| {
                         let name_ident = escape_ident(&el.name.name.to_snake_case());
-                        let name_xml = element_default.get_xml_name(&el.name);
+                        let name_xml = get_xml_name(&el.name, element_default.qualified);
                         let inner = el.definition.to_xml_impl(element_default);
                         quote! {
                             writer.write(XmlEvent::start_element(#name_xml))?;
@@ -65,10 +67,14 @@ impl FromXmlImpl for ElementContent {
                     .iter()
                     .map(|el| {
                         let name_ident = escape_ident(&el.name.name.to_snake_case());
-                        let name_xml = element_default.get_xml_name(&el.name);
+                        let name_xml = &el.name.name;
+                        let namespace_xml = el
+                            .name
+                            .namespace
+                            .from_xml_impl(&element_default, &namespaces);
                         let inner = el.definition.from_xml_impl(element_default, namespaces);
                         quote! { #name_ident: {
-                            let node = node.try_child(#name_xml, None)?;
+                            let node = node.try_child(#name_xml, #namespace_xml)?;
                             #inner
                         } }
                     })

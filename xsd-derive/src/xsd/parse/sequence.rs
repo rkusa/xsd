@@ -10,7 +10,7 @@ pub fn parse(node: &Node<'_, '_>, ctx: &Context<'_, '_>) -> Result<ElementConten
         match child.name() {
             "element" => {
                 inner.push(Element {
-                    name: Name::new(child.try_attribute("name")?.value(), Namespace::Target),
+                    name: ctx.get_node_name(child.try_attribute("name")?.value(), false),
                     definition: super::element::parse(&child, ctx)?,
                 });
             }

@@ -20,13 +20,12 @@ pub trait ToImpl {
     fn to_impl(&self, state: &mut State) -> TokenStream;
 }
 
-pub type State = ();
-
-#[derive(Clone)]
-pub enum ElementDefault {
-    Qualified,
-    Unqualified(String),
+// TODO: implement or remove
+pub struct ElementDefault {
+    pub target_namespace: Option<String>,
+    pub qualified: bool,
 }
+pub type State = ();
 
 pub trait ToXmlImpl {
     fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream;
@@ -42,34 +41,18 @@ pub trait FromXmlImpl {
     ) -> TokenStream;
 }
 
-impl ElementDefault {
-    pub fn get_xml_name(&self, name: &Name) -> String {
-        match &name.namespace {
-            Namespace::None => name.name.clone(),
-            Namespace::Target => {
-                match self {
-                    ElementDefault::Qualified => {
-                        unimplemented!("ElementDefault::get_xml_name Namespace::Target");
-                    }
-                    ElementDefault::Unqualified(_) => {
-                        // TODO: whether namespaces matches default target
-                        name.name.clone()
-                    }
-                }
-            }
-            Namespace::Other(other) => {
-                unimplemented!("ElementDefault::get_xml_name Namespace::Other({})", other)
+pub fn get_xml_name(name: &Name, qualified: bool) -> String {
+    match &name.namespace {
+        Namespace::None => name.name.clone(),
+        Namespace::Target => {
+            if qualified {
+                name.name.clone()
+            } else {
+                format!("tn:{}", name.name)
             }
         }
-        // match self {
-        //     ElementDefault::Qualified => format!("{}:{}", type_name.prefix, type_name.name),
-        //     ElementDefault::Unqualified(prefix) => {
-        //         if prefix == &type_name.prefix {
-        //             type_name.name.to_string()
-        //         } else {
-        //             format!("{}:{}", type_name.prefix, type_name.name)
-        //         }
-        //     }
-        // }
+        Namespace::Other(other) => {
+            unimplemented!("ElementDefault::get_xml_name Namespace::Other({})", other)
+        }
     }
 }

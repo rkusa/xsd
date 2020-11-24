@@ -12,6 +12,7 @@ pub struct Context<'a, 'input> {
     default_namespace: Option<&'input str>,
     target_namespace: Option<&'a str>,
     namespaces: HashMap<&'input str, &'input str>,
+    is_qualified: bool,
 }
 
 pub const NS_XSD: &str = "http://www.w3.org/2001/XMLSchema";
@@ -34,6 +35,7 @@ where
             default_namespace: schema.default_namespace(),
             target_namespace,
             namespaces,
+            is_qualified: schema.attribute("elementFormDefault") == Some("qualified"),
         }
     }
 
@@ -51,6 +53,17 @@ where
 
     pub fn elements(&self) -> impl Iterator<Item = (&Name, &Lazy<'a, 'input>)> {
         self.elements.iter()
+    }
+
+    pub fn get_node_name(&self, name: impl AsRef<str>, is_top_level: bool) -> Name {
+        Name::new(
+            name.as_ref(),
+            if self.is_qualified || is_top_level {
+                Namespace::Target
+            } else {
+                Namespace::None
+            },
+        )
     }
 
     pub fn get_type_name(&self, attr: &Attribute<'a, 'input>) -> Result<DataType, XsdError> {

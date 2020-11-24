@@ -9,6 +9,8 @@ use crate::types::{ElementDefinition, Name, Namespace};
 
 pub struct Schema {
     elements: HashMap<Name, ElementDefinition>,
+    target_namespace: Option<String>,
+    qualified: bool,
 }
 
 impl Schema {
@@ -55,7 +57,16 @@ impl Schema {
             });
         }
 
-        let mut ctx = Context::new(&root, target_namespace);
+        let target_namespace = target_namespace.map(|tn| tn.to_string()).or_else(|| {
+            root.attribute("targetNamespace")
+                .map(|a| a.value().to_string())
+        });
+        let qualified = root
+            .attribute("elementFormDefault")
+            .map(|a| a.value())
+            .as_deref()
+            == Some("qualified");
+        let mut ctx = Context::new(&root, target_namespace.as_deref());
 
         for child in root.children().namespace(NS_XSD).iter() {
             if child.name() == "import" {
@@ -63,7 +74,15 @@ impl Schema {
                 // continue;
             }
 
-            let name = Name::new(child.try_attribute("name")?.value(), Namespace::Target);
+            let name = Name::new(
+                child.try_attribute("name")?.value(),
+                // Root elements and types are qualified to the target namespace if there is one
+                if target_namespace.is_some() {
+                    Namespace::Target
+                } else {
+                    Namespace::None
+                },
+            );
 
             match child.name() {
                 "element" => {
@@ -90,10 +109,22 @@ impl Schema {
             elements.insert(name.clone(), definition.try_get(&ctx)?.clone());
         }
 
-        Ok(Schema { elements })
+        Ok(Schema {
+            elements,
+            target_namespace,
+            qualified,
+        })
     }
 
     pub fn elements(&self) -> impl Iterator<Item = (&Name, &ElementDefinition)> {
         self.elements.iter()
+    }
+
+    pub fn target_namespace(&self) -> Option<&str> {
+        self.target_namespace.as_deref()
+    }
+
+    pub fn qualified(&self) -> bool {
+        self.qualified
     }
 }
