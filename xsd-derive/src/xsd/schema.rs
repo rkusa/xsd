@@ -4,7 +4,6 @@ use roxmltree::{Document, TextPos};
 
 use super::context::{Context, NS_XSD};
 use super::error::{Error, XsdError};
-use super::lazy::Lazy;
 use super::node::Node;
 use crate::types::{ElementDefinition, Name, Namespace};
 

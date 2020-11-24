@@ -1,11 +1,16 @@
-use super::{ElementContent, ElementDefault, FromXmlImpl, LiteralType, Namespaces, ToXmlImpl};
+use super::{ElementContent, ElementDefault, FromXmlImpl, Namespaces, State, ToImpl, ToXmlImpl};
 use proc_macro2::TokenStream;
-use quote::quote;
 
 #[derive(Debug, Clone)]
 pub struct ElementDefinition {
     // attrs
     pub content: ElementContent,
+}
+
+impl ToImpl for ElementDefinition {
+    fn to_impl(&self, state: &mut State) -> TokenStream {
+        self.content.to_impl(state)
+    }
 }
 
 impl ToXmlImpl for ElementDefinition {

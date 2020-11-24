@@ -1,13 +1,9 @@
 #![allow(unused)]
 
-// #[allow(unused_extern_crates)]
-// extern crate proc_macro;
-
 mod generator;
 mod types;
 mod xsd;
 
-use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 

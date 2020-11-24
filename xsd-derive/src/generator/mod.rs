@@ -3,7 +3,7 @@ mod error;
 use std::collections::HashMap;
 use std::{fs::read_to_string, path::Path};
 
-use crate::types::{ElementContent, ElementDefault, FromXmlImpl, LiteralType, ToImpl, ToXmlImpl};
+use crate::types::{ElementContent, ElementDefault, FromXmlImpl, ToImpl, ToXmlImpl};
 use crate::xsd::Schema;
 use error::GeneratorError;
 use inflector::Inflector;
@@ -39,8 +39,39 @@ pub fn generate(
         let name_ident = escape_ident(&name.name.to_pascal_case());
         let name_xml = element_default.get_xml_name(&name);
 
-        let struct_body = el.content.to_impl(&mut state);
-        let to_xml = el.to_xml_impl(&element_default);
+        let struct_body = match &el.content {
+            ElementContent::Literal(literal) => {
+                let inner = literal.to_impl(&mut state);
+                quote! {
+                    (pub #inner);
+                }
+            }
+            ElementContent::Elements(elements) => {
+                let properties = elements
+                    .iter()
+                    .map(|el| {
+                        let name_ident = escape_ident(&el.name.name.to_snake_case());
+                        let type_ident = el.definition.to_impl(&mut state);
+                        quote! { #name_ident: #type_ident }
+                    })
+                    .collect::<Vec<_>>();
+                quote! {
+                    {
+                        #(pub #properties,)*
+                    }
+                }
+            }
+        };
+        let to_xml = match &el.content {
+            ElementContent::Literal(literal) => {
+                let inner = literal.to_xml_impl(&element_default);
+                quote! {
+                    let val = &self.0;
+                    #inner
+                }
+            }
+            content => content.to_xml_impl(&element_default),
+        };
         let from_xml = el.from_xml_impl(&element_default, &namespaces);
 
         structs.append_all(quote! {
@@ -93,7 +124,7 @@ pub fn generate(
     })
 }
 
-fn escape_ident(name: &str) -> syn::Ident {
+pub fn escape_ident(name: &str) -> syn::Ident {
     match name {
         " break" | "const" | "continue" | "crate" | "else" | "enum" | "extern" | "false" | "fn"
         | "for" | "if" | "impl" | "in" | "let" | "loop" | "match" | "mod" | "move" | "mut"

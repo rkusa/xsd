@@ -3,7 +3,7 @@ use std::cell::Cell;
 use super::context::Context;
 use super::error::XsdError;
 use super::node::Node;
-use crate::types::{ElementContent, ElementDefinition};
+use crate::types::ElementDefinition;
 
 pub struct Lazy<'a, 'input> {
     node: Node<'a, 'input>,
@@ -45,7 +45,7 @@ impl<'a, 'input> Lazy<'a, 'input> {
         match self.node.name() {
             "element" => super::parse::element::parse(&self.node, ctx),
             child_name => Err(XsdError::UnsupportedElement {
-                name: self.node.name().to_string(),
+                name: child_name.to_string(),
                 parent: "schema".to_string(),
                 range: self.node.range(),
             }),
