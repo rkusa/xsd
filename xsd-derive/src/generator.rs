@@ -160,12 +160,18 @@ pub fn generate(
     let attrs = &item.attrs;
     let vis = &item.vis;
     let ident = &item.ident;
-
-    // TODO: keep existing content?
+    let items = item
+        .content
+        .as_ref()
+        .map(|(_, items)| items.clone())
+        .unwrap_or_default();
 
     Ok(quote! {
         #(#attrs)*
         #vis mod #ident {
+            #(#items
+            )*
+
             #structs
         }
     })
