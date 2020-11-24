@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tn:profile xmlns:tn="urn:foobar">
-  <name>Foobar</name>
-</tn:profile>
+<tn:article xmlns:tn="urn:foobar">
+  <excerpt>Lorem Ipsum</excerpt>
+  <author>
+    <name>Foobar</name>
+  </author>
+</tn:article>

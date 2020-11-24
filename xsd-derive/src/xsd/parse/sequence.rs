@@ -1,21 +1,39 @@
-use crate::types::{ElementContent, Leaf, LeafContent};
+use crate::types::{ElementContent, ElementDefinition, Kind, Leaf, LeafContent, Name};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
 
-pub fn parse(node: &Node<'_, '_>, ctx: &Context<'_, '_>) -> Result<ElementContent, XsdError> {
+pub fn parse<'a, 'input>(
+    node: Node<'a, 'input>,
+    parent: &Name,
+    ctx: &mut Context<'a, 'input>,
+) -> Result<ElementContent, XsdError>
+where
+    'a: 'input,
+{
     let mut leaves = Vec::new();
 
     for child in node.children().namespace(NS_XSD).iter() {
         match child.name() {
             "element" => {
-                leaves.push(Leaf {
-                    name: ctx.get_node_name(child.try_attribute("name")?.value(), false),
-                    content: match super::element::parse(&child, ctx)?.content {
-                        ElementContent::Literal(literal) => LeafContent::Literal(literal),
-                        ElementContent::Leaves(_) => unimplemented!("nested elements"),
-                    },
-                });
+                let name = ctx.get_node_name(&child.try_attribute("name")?.value(), false);
+                let ElementDefinition { kind: _, content } =
+                    super::element::parse(child, parent, ctx, Kind::Child)?;
+                match content {
+                    ElementContent::Literal(literal) => {
+                        leaves.push(Leaf {
+                            name,
+                            content: LeafContent::Literal(literal),
+                        });
+                    }
+                    ElementContent::Reference(ref_name) => leaves.push(Leaf {
+                        name,
+                        content: LeafContent::Named(ref_name),
+                    }),
+                    ElementContent::Leaves(_leaves) => {
+                        unimplemented!("sequence ElementContent::Leaves")
+                    }
+                }
             }
             child_name => {
                 return Err(XsdError::UnsupportedElement {

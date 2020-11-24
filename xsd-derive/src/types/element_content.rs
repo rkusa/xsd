@@ -1,6 +1,8 @@
 use crate::generator::escape_ident;
 
-use super::{get_xml_name, ElementDefault, FromXmlImpl, Leaf, LiteralType, Namespaces, ToXmlImpl};
+use super::{
+    get_xml_name, ElementDefault, FromXmlImpl, Leaf, LiteralType, Name, Namespaces, ToXmlImpl,
+};
 use super::{State, ToImpl};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
@@ -9,18 +11,20 @@ use quote::quote;
 #[derive(Debug, Clone)]
 pub enum ElementContent {
     Literal(LiteralType),
+    Reference(Name),
     Leaves(Vec<Leaf>),
 }
 
 impl ToImpl for ElementContent {
     fn to_impl(&self, state: &mut State) -> TokenStream {
-        match &self {
+        match self {
             ElementContent::Literal(literal) => {
                 let inner = literal.to_impl(state);
                 quote! {
                     (pub #inner);
                 }
             }
+            ElementContent::Reference(_) => unimplemented!("ElementContent::Reference::to_impl"),
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
@@ -44,6 +48,9 @@ impl ToXmlImpl for ElementContent {
     fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         match &self {
             ElementContent::Literal(literal) => literal.to_xml_impl(element_default),
+            ElementContent::Reference(_) => {
+                unimplemented!("ElementContent::Reference::to_xml_impl")
+            }
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
@@ -75,6 +82,9 @@ impl FromXmlImpl for ElementContent {
             ElementContent::Literal(literal) => {
                 let inner = literal.from_xml_impl(element_default, namespaces);
                 quote! { (#inner) }
+            }
+            ElementContent::Reference(_) => {
+                unimplemented!("ElementContent::Reference::from_impl_impl")
             }
             ElementContent::Leaves(leaves) => {
                 let properties = leaves

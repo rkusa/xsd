@@ -4,7 +4,15 @@ use proc_macro2::TokenStream;
 #[derive(Debug, Clone)]
 pub struct ElementDefinition {
     // attrs
+    pub kind: Kind,
     pub content: ElementContent,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Kind {
+    Root,
+    Child,
+    Virtual,
 }
 
 impl ToImpl for ElementDefinition {

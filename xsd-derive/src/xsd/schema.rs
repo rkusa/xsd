@@ -5,7 +5,7 @@ use roxmltree::{Document, TextPos};
 use super::context::{Context, NS_XSD};
 use super::error::{Error, XsdError};
 use super::node::Node;
-use crate::types::{ElementDefinition, Name, Namespace};
+use crate::types::{ElementDefinition, Kind, Name, Namespace};
 
 pub struct Schema {
     elements: HashMap<Name, ElementDefinition>,
@@ -86,13 +86,13 @@ impl Schema {
 
             match child.name() {
                 "element" => {
-                    ctx.add_element(name, child);
+                    ctx.add_element(name, child, Kind::Root);
                 }
                 "simpleType" => {
-                    ctx.add_simple_type(name, child);
+                    ctx.add_simple_type(name, child, Kind::Root);
                 }
                 "complexType" => {
-                    ctx.add_complex_type(name, child);
+                    ctx.add_complex_type(name, child, Kind::Root);
                 }
                 child_name => {
                     return Err(XsdError::UnsupportedElement {
@@ -105,8 +105,15 @@ impl Schema {
         }
 
         let mut elements = HashMap::new();
-        for (name, definition) in ctx.elements() {
-            elements.insert(name.clone(), definition.try_get(&ctx)?.clone());
+        loop {
+            let mut has_more = false;
+            for (name, definition) in ctx.remove_elements() {
+                has_more = true;
+                elements.insert(name.clone(), definition.try_get(&mut ctx)?.clone());
+            }
+            if !has_more {
+                break;
+            }
         }
 
         Ok(Schema {

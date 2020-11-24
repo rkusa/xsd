@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::lazy::Lazy;
 use super::node::{Attribute, Node};
 use super::XsdError;
-use crate::types::{LeafContent, LiteralType, Name, Namespace};
+use crate::types::{Kind, LeafContent, LiteralType, Name, Namespace};
 
 pub struct Context<'a, 'input> {
     simple_types: HashMap<Name, Lazy<'a, 'input>>,
@@ -39,25 +39,26 @@ where
         }
     }
 
-    pub fn add_simple_type(&mut self, name: Name, node: Node<'a, 'input>) {
-        self.simple_types.insert(name, Lazy::new(node));
+    pub fn add_simple_type(&mut self, name: Name, node: Node<'a, 'input>, kind: Kind) {
+        self.simple_types.insert(name, Lazy::new(node, kind));
     }
 
-    pub fn add_complex_type(&mut self, name: Name, node: Node<'a, 'input>) {
-        self.complex_types.insert(name, Lazy::new(node));
+    pub fn add_complex_type(&mut self, name: Name, node: Node<'a, 'input>, kind: Kind) {
+        self.complex_types.insert(name, Lazy::new(node, kind));
     }
 
-    pub fn add_element(&mut self, name: Name, node: Node<'a, 'input>) {
-        self.elements.insert(name, Lazy::new(node));
+    pub fn add_element(&mut self, name: Name, node: Node<'a, 'input>, kind: Kind) {
+        self.elements.insert(name, Lazy::new(node, kind));
     }
 
-    pub fn elements(&self) -> impl Iterator<Item = (&Name, &Lazy<'a, 'input>)> {
-        self.elements.iter()
+    pub fn remove_elements(&mut self) -> impl Iterator<Item = (Name, Lazy<'a, 'input>)> {
+        let elements = std::mem::take(&mut self.elements);
+        elements.into_iter()
     }
 
-    pub fn get_node_name(&self, name: impl AsRef<str>, is_top_level: bool) -> Name {
+    pub fn get_node_name(&self, name: &str, is_top_level: bool) -> Name {
         Name::new(
-            name.as_ref(),
+            name,
             if self.is_qualified || is_top_level {
                 Namespace::Target
             } else {
@@ -66,7 +67,7 @@ where
         )
     }
 
-    pub fn get_type_name(&self, attr: &Attribute<'a, 'input>) -> Result<LeafContent, XsdError> {
+    pub fn get_type_name<'b, 'c>(&self, attr: &Attribute<'b, 'c>) -> Result<LeafContent, XsdError> {
         let type_name = attr.value();
         let mut parts = type_name.splitn(2, ':');
 

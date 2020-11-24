@@ -3,7 +3,9 @@ mod error;
 use std::collections::HashMap;
 use std::{fs::read_to_string, path::Path};
 
-use crate::types::{get_xml_name, ElementContent, ElementDefault, FromXmlImpl, ToImpl, ToXmlImpl};
+use crate::types::{
+    get_xml_name, ElementContent, ElementDefault, FromXmlImpl, Kind, ToImpl, ToXmlImpl,
+};
 use crate::xsd::Schema;
 use error::GeneratorError;
 use inflector::Inflector;
@@ -70,42 +72,87 @@ pub fn generate(
             }
         }
 
-        structs.append_all(quote! {
-            impl #name_ident {
-                pub fn to_xml(&self) -> Result<Vec<u8>, ::xml::writer::Error> {
-                    use ::xml::writer::events::XmlEvent;
+        if el.kind == Kind::Root {
+            structs.append_all(quote! {
+                impl #name_ident {
+                    pub fn to_xml(&self) -> Result<Vec<u8>, ::xml::writer::Error> {
+                        use ::xml::writer::events::XmlEvent;
 
-                    let mut body = Vec::new();
-                    let mut writer = ::xml::writer::EmitterConfig::new()
-                        .perform_indent(true)
-                        .create_writer(&mut body);
+                        let mut body = Vec::new();
+                        let mut writer = ::xml::writer::EmitterConfig::new()
+                            .perform_indent(true)
+                            .create_writer(&mut body);
 
-                    writer.write(XmlEvent::StartDocument {
-                        version: ::xml::common::XmlVersion::Version10,
-                        encoding: Some("UTF-8"),
-                        standalone: None,
-                    })?;
+                        writer.write(XmlEvent::StartDocument {
+                            version: ::xml::common::XmlVersion::Version10,
+                            encoding: Some("UTF-8"),
+                            standalone: None,
+                        })?;
+                        self.to_xml_writer(&mut writer)?;
 
-                    writer.write(XmlEvent::start_element(#name_xml)
-                        #(#element_ns)*)?;
-                    #to_xml
-                    writer.write(XmlEvent::end_element())?;
-
-                    Ok(body)
+                        Ok(body)
+                    }
                 }
+            });
+        }
+
+        match el.kind {
+            Kind::Root | Kind::Child => {
+                structs.append_all(quote! {
+                    impl #name_ident {
+                        fn to_xml_writer<W: ::std::io::Write>(
+                            &self,
+                            writer: &mut ::xml::writer::EventWriter<W>,
+                        ) -> Result<(), ::xml::writer::Error> {
+                            use ::xml::writer::events::XmlEvent;
+
+                            writer.write(XmlEvent::start_element(#name_xml)
+                                #(#element_ns)*)?;
+                            #to_xml
+                            writer.write(XmlEvent::end_element())?;
+
+                            Ok(())
+                        }
+                    }
+                });
             }
-        });
+            Kind::Virtual => {
+                structs.append_all(quote! {
+                    impl #name_ident {
+                        fn to_xml_writer<W: ::std::io::Write>(
+                            &self,
+                            writer: &mut ::xml::writer::EventWriter<W>,
+                        ) -> Result<(), ::xml::writer::Error> {
+                            use ::xml::writer::events::XmlEvent;
+
+                            #to_xml
+
+                            Ok(())
+                        }
+                    }
+                });
+            }
+        }
 
         let name_xml = &name.name;
         let namespace_xml = name.namespace.from_xml_impl(&element_default, &namespaces);
         let from_xml = el.from_xml_impl(&element_default, &namespaces);
 
+        if el.kind == Kind::Root {
+            structs.append_all(quote! {
+                impl #name_ident {
+                    pub fn from_xml(input: impl AsRef<str>) -> Result<Self, ::xsd::decode::FromXmlError> {
+                        let doc = ::xsd::decode::decode(input.as_ref())?;
+                        let node = doc.try_child(#name_xml, #namespace_xml)?;
+                        Self::from_xml_node(&node)
+                    }
+                }
+            });
+        }
+
         structs.append_all(quote! {
             impl #name_ident {
-                pub fn from_xml(input: impl AsRef<str>) -> Result<Self, ::xsd::decode::FromXmlError> {
-                    let doc = ::xsd::decode::decode(input.as_ref())?;
-                    // TODO: namespace
-                    let node = doc.try_child(#name_xml, #namespace_xml)?;
+                fn from_xml_node(node: &::xsd::decode::Node) -> Result<Self, ::xsd::decode::FromXmlError> {
                     Ok(#name_ident#from_xml)
                 }
             }

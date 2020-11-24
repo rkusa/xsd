@@ -124,7 +124,7 @@ impl<'a, 'input> Node<'a, 'input> {
     }
 
     // TODO: builder pattern instead of search arguments?
-    pub fn children(&'a self) -> ChildrenFilterBuilder {
+    pub fn children<'b>(&'b self) -> ChildrenFilterBuilder<'a, 'input, 'b> {
         ChildrenFilterBuilder {
             node: self,
             filter: ChildrenFilter::default(),
@@ -245,12 +245,12 @@ struct ChildrenFilter<'a> {
     attribute_value: Option<&'a str>,
 }
 
-pub struct ChildrenFilterBuilder<'a, 'input> {
-    node: &'a Node<'a, 'input>,
+pub struct ChildrenFilterBuilder<'a, 'input, 'b> {
+    node: &'b Node<'a, 'input>,
     filter: ChildrenFilter<'a>,
 }
 
-impl<'a, 'input> ChildrenFilterBuilder<'a, 'input> {
+impl<'a, 'input, 'b> ChildrenFilterBuilder<'a, 'input, 'b> {
     pub fn element(mut self, name: &'a str) -> Self {
         self.filter.element_name = Some(name);
         self
@@ -267,7 +267,7 @@ impl<'a, 'input> ChildrenFilterBuilder<'a, 'input> {
         self
     }
 
-    pub fn iter(self) -> impl Iterator<Item = Node<'a, 'input>> {
+    pub fn iter(self) -> impl Iterator<Item = Node<'a, 'input>> + 'b {
         self.node
             .inner
             .children()

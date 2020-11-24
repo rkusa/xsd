@@ -12,7 +12,7 @@ impl ToImpl for LeafContent {
     fn to_impl(&self, state: &mut State) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => literal.to_impl(state),
-            LeafContent::Named(_) => unimplemented!("to_impl LeafContent::Named"),
+            LeafContent::Named(name) => name.to_impl(state),
         }
     }
 }
@@ -21,7 +21,7 @@ impl ToXmlImpl for LeafContent {
     fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => literal.to_xml_impl(element_default),
-            LeafContent::Named(_) => unimplemented!("to_xml_impl LeafContent::Named"),
+            LeafContent::Named(name) => name.to_xml_impl(element_default),
         }
     }
 }
@@ -34,7 +34,7 @@ impl FromXmlImpl for LeafContent {
     ) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => literal.from_xml_impl(element_default, namespaces),
-            LeafContent::Named(_) => unimplemented!("from_xml_impl LeafContent::Named"),
+            LeafContent::Named(name) => name.from_xml_impl(element_default, namespaces),
         }
     }
 }
