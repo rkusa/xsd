@@ -64,6 +64,16 @@ where
                         Ok((Some(super::complex_type::parse(child, &name, ctx)?), docs))
                     }
                 }
+                "simpleType" => {
+                    if content.is_some() {
+                        Err(XsdError::MultipleTypes {
+                            name: child.name().to_string(),
+                            range: child.range(),
+                        })
+                    } else {
+                        Ok((Some(super::simple_type::parse(child, ctx)?), docs))
+                    }
+                }
                 child_name => Err(XsdError::UnsupportedElement {
                     name: child_name.to_string(),
                     parent: node.name().to_string(),

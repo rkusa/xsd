@@ -14,13 +14,13 @@ pub enum XsdError {
         parent: String,
         range: Range<usize>,
     },
-    // #[error("Encountered unsupported value `{value}` for attribute `{name}` in `{element}`")]
-    // UnsupportedAttributeValue {
-    //     name: String,
-    //     value: String,
-    //     element: String,
-    //     range: Range<usize>,
-    // },
+    #[error("Encountered unsupported value `{value}` for attribute `{name}` in `{element}`")]
+    UnsupportedAttributeValue {
+        name: String,
+        value: String,
+        element: String,
+        range: Range<usize>,
+    },
     #[error("Missing element `{name}` in `{parent}`")]
     MissingElement {
         name: String,
@@ -72,7 +72,7 @@ impl XsdError {
             // XsdError::Import(_) => None,
             XsdError::Node(err) => err.range(),
             XsdError::UnsupportedElement { range, .. } => Some(range),
-            // XsdError::UnsupportedAttributeValue { range, .. } => Some(range),
+            XsdError::UnsupportedAttributeValue { range, .. } => Some(range),
             XsdError::MissingElement { range, .. } => Some(range),
             // XsdError::MissingAttribute { range, .. } => Some(range),
             XsdError::MissingNamespace { range, .. } => Some(range),
