@@ -1,5 +1,5 @@
-use crate::types::{ElementContent, ElementDefinition, Literal};
-use crate::xsd::context::{Context, DataType, NS_XSD};
+use crate::types::{ElementContent, ElementDefinition, LeafContent};
+use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
 
@@ -8,10 +8,10 @@ pub fn parse(node: &Node<'_, '_>, ctx: &Context<'_, '_>) -> Result<ElementDefini
         let type_name = ctx.get_type_name(attr)?;
 
         match type_name {
-            DataType::Literal(literal) => Ok(ElementDefinition {
-                content: ElementContent::Literal(Literal { type_: literal }),
+            LeafContent::Literal(literal) => Ok(ElementDefinition {
+                content: ElementContent::Literal(literal),
             }),
-            DataType::Named(_name) => {
+            LeafContent::Named(_name) => {
                 unimplemented!("<element type='non xs' />")
             }
         }

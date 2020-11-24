@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::lazy::Lazy;
 use super::node::{Attribute, Node};
 use super::XsdError;
-use crate::types::{LiteralType, Name, Namespace};
+use crate::types::{LeafContent, LiteralType, Name, Namespace};
 
 pub struct Context<'a, 'input> {
     simple_types: HashMap<Name, Lazy<'a, 'input>>,
@@ -66,7 +66,7 @@ where
         )
     }
 
-    pub fn get_type_name(&self, attr: &Attribute<'a, 'input>) -> Result<DataType, XsdError> {
+    pub fn get_type_name(&self, attr: &Attribute<'a, 'input>) -> Result<LeafContent, XsdError> {
         let type_name = attr.value();
         let mut parts = type_name.splitn(2, ':');
 
@@ -80,16 +80,16 @@ where
                         range: attr.range(),
                     })?;
                 return if *ns == NS_XSD {
-                    Ok(DataType::Literal(literal_from_str(name).ok_or_else(
+                    Ok(LeafContent::Literal(literal_from_str(name).ok_or_else(
                         || XsdError::UnsupportedType {
                             name: name.to_string(),
                             range: attr.range(),
                         },
                     )?))
                 } else if Some(*ns) == self.target_namespace {
-                    Ok(DataType::Named(Name::new(name, Namespace::Target)))
+                    Ok(LeafContent::Named(Name::new(name, Namespace::Target)))
                 } else {
-                    Ok(DataType::Named(Name::new(
+                    Ok(LeafContent::Named(Name::new(
                         name,
                         Namespace::Other(ns.to_string()),
                     )))
@@ -99,14 +99,14 @@ where
             _ => &type_name,
         };
         if self.default_namespace == Some(NS_XSD) {
-            Ok(DataType::Literal(literal_from_str(name).ok_or_else(
+            Ok(LeafContent::Literal(literal_from_str(name).ok_or_else(
                 || XsdError::UnsupportedType {
                     name: name.to_string(),
                     range: attr.range(),
                 },
             )?))
         } else {
-            Ok(DataType::Named(Name::new(name, Namespace::None)))
+            Ok(LeafContent::Named(Name::new(name, Namespace::None)))
         }
     }
 }
@@ -131,9 +131,4 @@ fn literal_from_str(literal: &str) -> Option<LiteralType> {
         "anyType" => LiteralType::Any,
         _ => return None,
     })
-}
-
-pub enum DataType {
-    Literal(LiteralType),
-    Named(Name),
 }

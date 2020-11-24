@@ -38,32 +38,11 @@ pub fn generate(
 
     let mut state = ();
     for (name, el) in schema.elements() {
+        // println!("{:#?}", el);
+
         // TODO: handle duplicates with different prefixes
         let name_ident = escape_ident(&name.name.to_pascal_case());
-
-        let struct_body = match &el.content {
-            ElementContent::Literal(literal) => {
-                let inner = literal.to_impl(&mut state);
-                quote! {
-                    (pub #inner);
-                }
-            }
-            ElementContent::Elements(elements) => {
-                let properties = elements
-                    .iter()
-                    .map(|el| {
-                        let name_ident = escape_ident(&el.name.name.to_snake_case());
-                        let type_ident = el.definition.to_impl(&mut state);
-                        quote! { #name_ident: #type_ident }
-                    })
-                    .collect::<Vec<_>>();
-                quote! {
-                    {
-                        #(pub #properties,)*
-                    }
-                }
-            }
-        };
+        let struct_body = &el.content.to_impl(&mut state);
 
         structs.append_all(quote! {
             #[derive(Debug, Clone, PartialEq)]
