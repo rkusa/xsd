@@ -1,11 +1,11 @@
-#[xsd::all(schema = "tests/xsd/element_complex_type_sequence_test.xsd")]
+#[xsd::all(schema = "tests/xsd/element_complex_type_sequence.xsd")]
 mod schema {}
 
 use pretty_assertions::assert_eq;
 
 #[test]
-fn element_complex_type_sequence_test() {
-    let xml = include_str!("./xsd/element_complex_type_sequence_test.xml");
+fn element_complex_type_sequence() {
+    let xml = include_str!("./xsd/element_complex_type_sequence.xml");
     let expected = schema::Article {
         subject: "Lorem Ipsum".to_string(),
         body: "Lorem ipsum dolor sit amet.".to_string(),

@@ -1,11 +1,11 @@
-#[xsd::all(schema = "tests/xsd/element_nested_test.xsd")]
+#[xsd::all(schema = "tests/xsd/element_nested.xsd")]
 mod schema {}
 
 use pretty_assertions::assert_eq;
 
 #[test]
-fn element_nested_test() {
-    let xml = include_str!("./xsd/element_nested_test.xml");
+fn element_nested() {
+    let xml = include_str!("./xsd/element_nested.xml");
     let expected = schema::Article {
         excerpt: "Lorem Ipsum".to_string(),
         author: schema::ArticleAuthor {
