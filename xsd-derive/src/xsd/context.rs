@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::lazy::Lazy;
 use super::node::{Attribute, Node};
 use super::XsdError;
-use crate::ast::{Kind, LeafContent, LiteralType, Name, Namespace};
+use crate::ast::{LeafContent, LiteralType, Name, Namespace};
 
 pub struct Context<'a, 'input> {
     simple_types: HashMap<Name, Lazy<'a, 'input>>,
@@ -39,16 +39,16 @@ where
         }
     }
 
-    pub fn add_simple_type(&mut self, name: Name, node: Node<'a, 'input>, kind: Kind) {
-        self.simple_types.insert(name, Lazy::new(node, kind));
+    pub fn add_simple_type(&mut self, name: Name, node: Node<'a, 'input>) {
+        self.simple_types.insert(name, Lazy::new(node));
     }
 
-    pub fn add_complex_type(&mut self, name: Name, node: Node<'a, 'input>, kind: Kind) {
-        self.complex_types.insert(name, Lazy::new(node, kind));
+    pub fn add_complex_type(&mut self, name: Name, node: Node<'a, 'input>) {
+        self.complex_types.insert(name, Lazy::new(node));
     }
 
-    pub fn add_element(&mut self, name: Name, node: Node<'a, 'input>, kind: Kind) {
-        self.elements.insert(name, Lazy::new(node, kind));
+    pub fn add_element(&mut self, name: Name, node: Node<'a, 'input>) {
+        self.elements.insert(name, Lazy::new(node));
     }
 
     pub fn discover_type(&mut self, name: &Name) {

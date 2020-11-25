@@ -5,10 +5,10 @@ use roxmltree::{Document, TextPos};
 use super::context::{Context, NS_XSD};
 use super::error::{Error, XsdError};
 use super::node::Node;
-use crate::ast::{ElementDefinition, Kind, Name, Namespace};
+use crate::ast::{Name, Namespace, Root};
 
 pub struct Schema {
-    elements: HashMap<Name, ElementDefinition>,
+    elements: HashMap<Name, Root>,
     target_namespace: Option<String>,
     qualified: bool,
 }
@@ -86,13 +86,13 @@ impl Schema {
 
             match child.name() {
                 "element" => {
-                    ctx.add_element(name, child, Kind::Root);
+                    ctx.add_element(name, child);
                 }
                 "simpleType" => {
-                    ctx.add_simple_type(name, child, Kind::Root);
+                    ctx.add_simple_type(name, child);
                 }
                 "complexType" => {
-                    ctx.add_complex_type(name, child, Kind::Root);
+                    ctx.add_complex_type(name, child);
                 }
                 child_name => {
                     return Err(XsdError::UnsupportedElement {
@@ -123,7 +123,7 @@ impl Schema {
         })
     }
 
-    pub fn elements(&self) -> impl Iterator<Item = (&Name, &ElementDefinition)> {
+    pub fn elements(&self) -> impl Iterator<Item = (&Name, &Root)> {
         self.elements.iter()
     }
 

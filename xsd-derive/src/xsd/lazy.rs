@@ -4,19 +4,18 @@ use std::ops::Range;
 use super::context::Context;
 use super::error::XsdError;
 use super::node::Node;
-use crate::ast::{ElementDefinition, Kind, Name, Namespace};
+use crate::ast::{Name, Namespace, Root};
 
 pub struct Lazy<'a, 'input> {
     name: String,
     range: Range<usize>,
-    kind: Kind,
     content: Cell<Content<'a, 'input>>,
 }
 
 enum Content<'a, 'input> {
     Requested,
     Node(Node<'a, 'input>),
-    Parsed(ElementDefinition),
+    Parsed(Root),
 }
 
 impl<'a, 'input> Default for Content<'a, 'input> {
@@ -29,16 +28,15 @@ impl<'a, 'input> Lazy<'a, 'input>
 where
     'a: 'input,
 {
-    pub fn new(node: Node<'a, 'input>, kind: Kind) -> Self {
+    pub fn new(node: Node<'a, 'input>) -> Self {
         Lazy {
             name: node.name().to_string(),
             range: node.range(),
-            kind,
             content: Cell::new(Content::Node(node)),
         }
     }
 
-    pub fn try_get(&self, ctx: &mut Context<'a, 'input>) -> Result<ElementDefinition, XsdError> {
+    pub fn try_get(&self, ctx: &mut Context<'a, 'input>) -> Result<Root, XsdError> {
         let content = self.content.take();
         match content {
             Content::Requested => Err(XsdError::CircularType {
@@ -61,11 +59,15 @@ where
         &self,
         node: Node<'a, 'input>,
         ctx: &mut Context<'a, 'input>,
-    ) -> Result<ElementDefinition, XsdError> {
-        let parent = Name::new("", Namespace::None);
+    ) -> Result<Root, XsdError> {
         match node.name() {
-            "element" => super::parse::element::parse(node, &parent, ctx, self.kind),
-            "complexType" => super::parse::complex_type::parse(node, &parent, ctx, Kind::Virtual),
+            "element" => super::parse::element::parse_root(node, ctx),
+            "complexType" => Ok(Root::Element(super::parse::complex_type::parse(
+                node,
+                &Name::new("", Namespace::None),
+                ctx,
+            )?)),
+            "simpleType" => Ok(Root::Leaf(super::parse::simple_type::parse(node, ctx)?)),
             child_name => Err(XsdError::UnsupportedElement {
                 name: child_name.to_string(),
                 parent: "schema".to_string(),

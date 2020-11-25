@@ -9,8 +9,6 @@ mod schema {
 #[test]
 fn existing_mod_content() {
     let _ = schema::Profile {
-        name: schema::Name {
-            value: "Foobar".to_string(),
-        },
+        name: schema::Name("Foobar".to_string()),
     };
 }
