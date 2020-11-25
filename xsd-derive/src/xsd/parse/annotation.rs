@@ -2,31 +2,21 @@ use crate::xsd::context::NS_XSD;
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
 
-pub fn parse(node: &Node<'_, '_>) -> Result<Option<String>, XsdError> {
-    let docs =
-        node.children()
-            .namespace(NS_XSD)
-            .iter()
-            .try_fold(None, |docs, child| match child.name() {
-                "documentation" => {
-                    if docs.is_some() {
-                        // TODO: prefer documentation with xml:lang="en"
-                        Ok(docs)
-                    } else {
-                        let text = child.try_text()?;
-                        if !text.is_empty() {
-                            Ok(Some(cleanup_docs(&text)))
-                        } else {
-                            Ok(None)
-                        }
-                    }
-                }
-                child_name => Err(XsdError::UnsupportedElement {
-                    name: child_name.to_string(),
-                    parent: node.name().to_string(),
-                    range: child.range(),
-                }),
-            })?;
+pub fn parse(node: Node<'_, '_>) -> Result<Option<String>, XsdError> {
+    let mut children = node.children().namespace(NS_XSD).collect();
+    let docs = children
+        .remove("documentation", Some(NS_XSD))
+        .map(|child| child.try_text())
+        .transpose()?
+        .and_then(|text| {
+            if !text.is_empty() {
+                Some(cleanup_docs(&text))
+            } else {
+                None
+            }
+        });
+
+    children.prevent_unvisited_children()?;
 
     Ok(docs)
 }

@@ -10,45 +10,30 @@ pub fn parse<'a, 'input>(
 where
     'a: 'input,
 {
-    let content = node
-        .children()
-        .namespace(NS_XSD)
-        .iter()
-        .try_fold(None, |content, child| match child.name() {
-            "restriction" => {
-                if content.is_some() {
-                    Err(XsdError::MultipleTypes {
-                        name: child.name().to_string(),
-                        range: child.range(),
-                    })
-                } else {
-                    let attr = child.try_attribute("base")?;
-                    let type_name = ctx.get_type_name(&attr)?;
-                    Ok(Some(match type_name {
-                        LeafContent::Literal(literal) => ElementContent::Literal(literal),
-                        LeafContent::Named(_) => {
-                            return Err(XsdError::UnsupportedAttributeValue {
-                                name: "base".to_string(),
-                                value: attr.value().to_string(),
-                                element: "restriction".to_string(),
-                                range: attr.range(),
-                            });
-                        }
-                    }))
-                }
+    let mut children = node.children().namespace(NS_XSD).collect();
+    let content = if let Some(child) = children.remove("restriction", Some(NS_XSD)) {
+        let attr = child.try_attribute("base")?;
+        let type_name = ctx.get_type_name(&attr)?;
+        match type_name {
+            LeafContent::Literal(literal) => ElementContent::Literal(literal),
+            LeafContent::Named(_) => {
+                return Err(XsdError::UnsupportedAttributeValue {
+                    name: "base".to_string(),
+                    value: attr.value().to_string(),
+                    element: "restriction".to_string(),
+                    range: attr.range(),
+                });
             }
-            child_name => Err(XsdError::UnsupportedElement {
-                name: child_name.to_string(),
-                parent: node.name().to_string(),
-                range: child.range(),
-            }),
-        })?;
+        }
+    } else {
+        return Err(XsdError::MissingElement {
+            name: "restriction".to_string(),
+            parent: node.name().to_string(),
+            range: node.range(),
+        });
+    };
 
-    let content = content.ok_or_else(|| XsdError::MissingElement {
-        name: "sequence".to_string(),
-        parent: "element".to_string(),
-        range: node.range(),
-    })?;
+    children.prevent_unvisited_children()?;
 
     Ok(content)
 }

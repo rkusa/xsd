@@ -34,6 +34,12 @@ pub enum NodeError {
         element: String,
         range: Range<usize>,
     },
+    #[error("Encountered unsupported element `{name}` in `{parent}`")]
+    UnsupportedElement {
+        name: String,
+        parent: String,
+        range: Range<usize>,
+    },
     #[error("Could not find namespace for URI {uri}")]
     MissingNamespace { uri: String, range: Range<usize> },
 }
@@ -123,7 +129,6 @@ impl<'a, 'input> Node<'a, 'input> {
             })
     }
 
-    // TODO: builder pattern instead of search arguments?
     pub fn children<'b>(&'b self) -> ChildrenFilterBuilder<'a, 'input, 'b> {
         ChildrenFilterBuilder {
             node: self,
@@ -232,6 +237,7 @@ impl NodeError {
             MissingNamespace { range, .. } => Some(range),
             TextExpected { range, .. } => Some(range),
             UnsupportedAttribute { range, .. } => Some(range),
+            UnsupportedElement { range, .. } => Some(range),
         }
     }
 }
@@ -313,6 +319,59 @@ impl<'a, 'input, 'b> ChildrenFilterBuilder<'a, 'input, 'b> {
                 attribute_value: filter.attribute_value.map(String::from),
                 range,
             })
+    }
+
+    pub fn collect(self) -> Children<'a, 'input, 'b> {
+        Children {
+            node: self.node,
+            children: self.iter().collect(),
+        }
+    }
+}
+
+pub struct Children<'a, 'input, 'b> {
+    node: &'b Node<'a, 'input>,
+    children: Vec<Node<'a, 'input>>,
+}
+
+impl<'a, 'input, 'b> Children<'a, 'input, 'b> {
+    pub fn remove(&mut self, name: &str, namespace: Option<&str>) -> Option<Node<'a, 'input>> {
+        self.children
+            .iter()
+            .position(|child| {
+                if !child.is_element() {
+                    return false;
+                }
+
+                let tag_name = child.tag_name();
+                tag_name.name() == name && tag_name.namespace() == namespace
+            })
+            .map(|i| self.children.remove(i))
+    }
+
+    pub fn try_remove(
+        &mut self,
+        name: &str,
+        namespace: Option<&str>,
+    ) -> Result<Node<'a, 'input>, NodeError> {
+        self.remove(name, namespace)
+            .ok_or_else(|| NodeError::MissingElement {
+                name: name.to_string(),
+                namespace: namespace.map(String::from),
+                range: self.node.range(),
+            })
+    }
+
+    pub fn prevent_unvisited_children(mut self) -> Result<(), NodeError> {
+        if let Some(child) = self.children.first() {
+            return Err(NodeError::UnsupportedElement {
+                name: child.name().to_string(),
+                parent: self.node.name().to_string(),
+                range: child.range(),
+            });
+        }
+
+        Ok(())
     }
 }
 

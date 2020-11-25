@@ -35,8 +35,8 @@ pub enum XsdError {
     // },
     #[error("Missing namespace for `{prefix}`")]
     MissingNamespace { prefix: String, range: Range<usize> },
-    #[error("Multiple types found inside `{name}`")]
-    MultipleTypes { name: String, range: Range<usize> },
+    // #[error("Multiple types found inside `{name}`")]
+    // MultipleTypes { name: String, range: Range<usize> },
     // #[error("Failed to parse int value")]
     // ParseInt {
     //     err: std::num::ParseIntError,
@@ -76,7 +76,7 @@ impl XsdError {
             XsdError::MissingElement { range, .. } => Some(range),
             // XsdError::MissingAttribute { range, .. } => Some(range),
             XsdError::MissingNamespace { range, .. } => Some(range),
-            XsdError::MultipleTypes { range, .. } => Some(range),
+            // XsdError::MultipleTypes { range, .. } => Some(range),
             // XsdError::ParseInt { range, .. } => Some(range),
             // XsdError::ParseDecimal { range, .. } => Some(range),
             XsdError::UnsupportedType { range, .. } => Some(range),

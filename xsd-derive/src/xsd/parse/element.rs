@@ -39,54 +39,28 @@ where
             content: ElementContent::Reference(name),
         })
     } else {
-        let (content, _docs) = node.children().namespace(NS_XSD).iter().try_fold(
-            (None, None),
-            |(content, docs), child| match child.name() {
-                "annotation" => {
-                    if docs.is_some() {
-                        Err(XsdError::MultipleTypes {
-                            name: child.name().to_string(),
-                            range: child.range(),
-                        })
-                    } else {
-                        Ok((content, super::annotation::parse(&child)?))
-                    }
-                }
-                "complexType" => {
-                    if content.is_some() {
-                        Err(XsdError::MultipleTypes {
-                            name: child.name().to_string(),
-                            range: child.range(),
-                        })
-                    } else {
-                        let name = node.try_attribute("name")?.value();
-                        let name = ctx.get_node_name(&name, false);
-                        Ok((Some(super::complex_type::parse(child, &name, ctx)?), docs))
-                    }
-                }
-                "simpleType" => {
-                    if content.is_some() {
-                        Err(XsdError::MultipleTypes {
-                            name: child.name().to_string(),
-                            range: child.range(),
-                        })
-                    } else {
-                        Ok((Some(super::simple_type::parse(child, ctx)?), docs))
-                    }
-                }
-                child_name => Err(XsdError::UnsupportedElement {
-                    name: child_name.to_string(),
-                    parent: node.name().to_string(),
-                    range: child.range(),
-                }),
-            },
-        )?;
+        let mut children = node.children().namespace(NS_XSD).collect();
+        // TODO: actually use docs
+        let _docs = children
+            .remove("annotation", Some(NS_XSD))
+            .map(super::annotation::parse)
+            .transpose()?;
 
-        let content = content.ok_or_else(|| XsdError::MissingElement {
-            name: "simpleType|complexType".to_string(),
-            parent: "element".to_string(),
-            range: node.range(),
-        })?;
+        let content = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
+            let name = node.try_attribute("name")?.value();
+            let name = ctx.get_node_name(&name, false);
+            super::complex_type::parse(child, &name, ctx)?
+        } else if let Some(child) = children.remove("simpleType", Some(NS_XSD)) {
+            super::simple_type::parse(child, ctx)?
+        } else {
+            return Err(XsdError::MissingElement {
+                name: "simpleType|complexType".to_string(),
+                parent: node.name().to_string(),
+                range: node.range(),
+            });
+        };
+
+        children.prevent_unvisited_children()?;
 
         Ok(ElementDefinition { kind, content })
     }

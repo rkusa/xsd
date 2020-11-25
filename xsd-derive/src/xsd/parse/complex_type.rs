@@ -11,33 +11,18 @@ pub fn parse<'a, 'input>(
 where
     'a: 'input,
 {
-    let content = node
-        .children()
-        .namespace(NS_XSD)
-        .iter()
-        .try_fold(None, |content, child| match child.name() {
-            "sequence" => {
-                if content.is_some() {
-                    Err(XsdError::MultipleTypes {
-                        name: child.name().to_string(),
-                        range: child.range(),
-                    })
-                } else {
-                    Ok(Some(super::sequence::parse(child, parent, ctx)?))
-                }
-            }
-            child_name => Err(XsdError::UnsupportedElement {
-                name: child_name.to_string(),
-                parent: node.name().to_string(),
-                range: child.range(),
-            }),
-        })?;
+    let mut children = node.children().namespace(NS_XSD).collect();
+    let content = if let Some(child) = children.remove("sequence", Some(NS_XSD)) {
+        super::sequence::parse(child, parent, ctx)?
+    } else {
+        return Err(XsdError::MissingElement {
+            name: "sequence".to_string(),
+            parent: node.name().to_string(),
+            range: node.range(),
+        });
+    };
 
-    let content = content.ok_or_else(|| XsdError::MissingElement {
-        name: "sequence".to_string(),
-        parent: "element".to_string(),
-        range: node.range(),
-    })?;
+    children.prevent_unvisited_children()?;
 
     Ok(content)
 }
