@@ -1,6 +1,7 @@
 use super::{ElementDefault, FromXmlImpl, LiteralType, Name, Namespaces, ToXmlImpl};
 use super::{State, ToImpl};
 use proc_macro2::TokenStream;
+use quote::quote;
 
 #[derive(Debug, Clone)]
 pub enum LeafContent {
@@ -20,7 +21,13 @@ impl ToImpl for LeafContent {
 impl ToXmlImpl for LeafContent {
     fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         match self {
-            LeafContent::Literal(literal) => literal.to_xml_impl(element_default),
+            LeafContent::Literal(literal) => {
+                let inner = literal.to_xml_impl(element_default);
+                quote! {
+                    let val = #inner;
+                    writer.write(XmlEvent::characters(&val))?;
+                }
+            }
             LeafContent::Named(name) => name.to_xml_impl(element_default),
         }
     }

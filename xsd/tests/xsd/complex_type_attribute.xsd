@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="article">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="excerpt" type="xs:string" />
+      </xs:sequence>
+      <xs:attribute name="author" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The article author.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

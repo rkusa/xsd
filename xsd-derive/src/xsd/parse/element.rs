@@ -18,12 +18,14 @@ where
         match type_name {
             LeafContent::Literal(literal) => Ok(ElementDefinition {
                 kind,
+                attributes: Vec::new(),
                 content: ElementContent::Literal(literal),
             }),
             LeafContent::Named(name) => {
                 ctx.discover_type(&name);
                 Ok(ElementDefinition {
                     kind: Kind::Root,
+                    attributes: Vec::new(),
                     content: ElementContent::Reference(name),
                 })
             }
@@ -40,6 +42,7 @@ where
         ctx.add_element(name.clone(), node, Kind::Virtual);
         Ok(ElementDefinition {
             kind: Kind::Virtual,
+            attributes: Vec::new(),
             content: ElementContent::Reference(name),
         })
     } else {
@@ -50,12 +53,16 @@ where
             .map(super::annotation::parse)
             .transpose()?;
 
-        let content = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
+        let definition = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
             let name = node.try_attribute("name")?.value();
             let name = ctx.get_node_name(&name, false);
-            super::complex_type::parse(child, &name, ctx)?
+            super::complex_type::parse(child, &name, ctx, kind)?
         } else if let Some(child) = children.remove("simpleType", Some(NS_XSD)) {
-            super::simple_type::parse(child, ctx)?
+            ElementDefinition {
+                kind,
+                attributes: Vec::new(),
+                content: super::simple_type::parse(child, ctx)?,
+            }
         } else {
             return Err(XsdError::MissingElement {
                 name: "simpleType|complexType".to_string(),
@@ -66,6 +73,6 @@ where
 
         children.prevent_unvisited_children()?;
 
-        Ok(ElementDefinition { kind, content })
+        Ok(definition)
     }
 }

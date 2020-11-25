@@ -65,10 +65,7 @@ where
         let parent = Name::new("", Namespace::None);
         match node.name() {
             "element" => super::parse::element::parse(node, &parent, ctx, self.kind),
-            "complexType" => Ok(ElementDefinition {
-                kind: Kind::Virtual,
-                content: super::parse::complex_type::parse(node, &parent, ctx)?,
-            }),
+            "complexType" => super::parse::complex_type::parse(node, &parent, ctx, Kind::Virtual),
             child_name => Err(XsdError::UnsupportedElement {
                 name: child_name.to_string(),
                 parent: "schema".to_string(),

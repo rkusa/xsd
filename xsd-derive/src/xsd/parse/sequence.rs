@@ -17,8 +17,12 @@ where
         match child.name() {
             "element" => {
                 let name = ctx.get_node_name(&child.try_attribute("name")?.value(), false);
-                let ElementDefinition { kind: _, content } =
-                    super::element::parse(child, parent, ctx, Kind::Child)?;
+                // TODO: impl attributes for leaves
+                let ElementDefinition {
+                    kind: _,
+                    attributes: _,
+                    content,
+                } = super::element::parse(child, parent, ctx, Kind::Child)?;
                 match content {
                     ElementContent::Literal(literal) => {
                         leaves.push(Leaf {

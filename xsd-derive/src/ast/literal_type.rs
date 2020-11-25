@@ -63,10 +63,7 @@ impl ToImpl for LiteralType {
 
 impl ToXmlImpl for LiteralType {
     fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
-        quote! {
-            let val = val.to_string();
-            writer.write(XmlEvent::characters(&val))?;
-        }
+        quote!(val.to_string())
     }
 }
 
@@ -78,16 +75,13 @@ impl FromXmlImpl for LiteralType {
     ) -> TokenStream {
         let type_ = self.xsd_name();
         quote! {
-            {
-                let val = node.text()?;
-                std::str::FromStr::from_str(val).map_err(|err| {
-                    ::xsd::decode::FromXmlError::ParseType {
-                        type_: #type_.to_string(),
-                        value: val.to_string(),
-                        err: Box::new(err),
-                    }
-                })?
-            }
+            std::str::FromStr::from_str(val).map_err(|err| {
+                ::xsd::decode::FromXmlError::ParseType {
+                    type_: #type_.to_string(),
+                    value: val.to_string(),
+                    err: Box::new(err),
+                }
+            })?
         }
     }
 }

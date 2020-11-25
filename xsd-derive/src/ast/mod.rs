@@ -1,3 +1,4 @@
+mod attribute;
 mod element_content;
 mod element_definition;
 mod leaf;
@@ -7,6 +8,7 @@ mod name;
 
 use std::collections::HashMap;
 
+pub use attribute::*;
 pub use element_content::*;
 pub use element_definition::*;
 pub use leaf::*;

@@ -20,9 +20,7 @@ impl ToImpl for ElementContent {
         match self {
             ElementContent::Literal(literal) => {
                 let inner = literal.to_impl(state);
-                quote! {
-                    (pub #inner);
-                }
+                quote!(pub value: #inner,)
             }
             ElementContent::Reference(_) => unimplemented!("ElementContent::Reference::to_impl"),
             ElementContent::Leaves(leaves) => {
@@ -34,11 +32,7 @@ impl ToImpl for ElementContent {
                         quote! { #name_ident: #type_ident }
                     })
                     .collect::<Vec<_>>();
-                quote! {
-                    {
-                        #(pub #properties,)*
-                    }
-                }
+                quote!(#(pub #properties,)*)
             }
         }
     }
@@ -47,7 +41,14 @@ impl ToImpl for ElementContent {
 impl ToXmlImpl for ElementContent {
     fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         match &self {
-            ElementContent::Literal(literal) => literal.to_xml_impl(element_default),
+            ElementContent::Literal(literal) => {
+                let inner = literal.to_xml_impl(element_default);
+                quote! {
+                    let val = &self.value;
+                    let val = #inner;
+                    writer.write(XmlEvent::characters(&val))?;
+                }
+            }
             ElementContent::Reference(_) => {
                 unimplemented!("ElementContent::Reference::to_xml_impl")
             }
@@ -66,7 +67,7 @@ impl ToXmlImpl for ElementContent {
                         }
                     })
                     .collect::<Vec<_>>();
-                quote! { #(#properties)* }
+                quote!(#(#properties)*)
             }
         }
     }
@@ -81,7 +82,12 @@ impl FromXmlImpl for ElementContent {
         match &self {
             ElementContent::Literal(literal) => {
                 let inner = literal.from_xml_impl(element_default, namespaces);
-                quote! { (#inner) }
+                quote! {
+                    value: {
+                        let val = node.text()?;
+                        #inner
+                    },
+                }
             }
             ElementContent::Reference(_) => {
                 unimplemented!("ElementContent::Reference::from_impl_impl")
@@ -99,15 +105,12 @@ impl FromXmlImpl for ElementContent {
                         let inner = el.content.from_xml_impl(element_default, namespaces);
                         quote! { #name_ident: {
                             let node = node.try_child(#name_xml, #namespace_xml)?;
+                            let val = node.text()?;
                             #inner
                         } }
                     })
                     .collect::<Vec<_>>();
-                quote! {
-                    {
-                        #(#properties,)*
-                    }
-                }
+                quote!(#(#properties,)*)
             }
         }
     }

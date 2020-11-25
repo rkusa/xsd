@@ -1,10 +1,14 @@
-use super::{ElementContent, ElementDefault, FromXmlImpl, Namespaces, State, ToImpl, ToXmlImpl};
+use super::{
+    Attribute, ElementContent, ElementDefault, FromXmlImpl, Namespaces, State, ToImpl, ToXmlImpl,
+};
 use proc_macro2::TokenStream;
+use quote::quote;
+use quote::TokenStreamExt;
 
 #[derive(Debug, Clone)]
 pub struct ElementDefinition {
-    // attrs
     pub kind: Kind,
+    pub attributes: Vec<Attribute>,
     pub content: ElementContent,
 }
 
@@ -17,13 +21,27 @@ pub enum Kind {
 
 impl ToImpl for ElementDefinition {
     fn to_impl(&self, state: &mut State) -> TokenStream {
-        self.content.to_impl(state)
+        let mut ts = TokenStream::new();
+        ts.append_all(self.content.to_impl(state));
+        for attr in &self.attributes {
+            ts.append_all(attr.to_impl(state));
+        }
+        quote! {
+            {
+                #ts
+            }
+        }
     }
 }
 
 impl ToXmlImpl for ElementDefinition {
     fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
-        self.content.to_xml_impl(element_default)
+        let mut ts = TokenStream::new();
+        ts.append_all(self.content.to_xml_impl(element_default));
+        // for attr in &self.attributes {
+        //     ts.append_all(attr.to_xml_impl(element_default));
+        // }
+        ts
     }
 }
 
@@ -33,6 +51,15 @@ impl FromXmlImpl for ElementDefinition {
         element_default: &ElementDefault,
         namespaces: &'a Namespaces<'a>,
     ) -> TokenStream {
-        self.content.from_xml_impl(element_default, namespaces)
+        let mut ts = TokenStream::new();
+        ts.append_all(self.content.from_xml_impl(element_default, namespaces));
+        for attr in &self.attributes {
+            ts.append_all(attr.from_xml_impl(element_default, namespaces));
+        }
+        quote! {
+            {
+                #ts
+            }
+        }
     }
 }

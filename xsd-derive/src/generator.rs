@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 use std::{fs::read_to_string, path::Path};
 
-use crate::ast::{
-    get_xml_name, ElementContent, ElementDefault, FromXmlImpl, Kind, ToImpl, ToXmlImpl,
-};
+use crate::ast::{get_xml_name, ElementDefault, FromXmlImpl, Kind, ToImpl, ToXmlImpl};
 use crate::error::GeneratorError;
 use crate::xsd::Schema;
 use inflector::Inflector;
@@ -42,23 +40,19 @@ pub fn generate(
 
         // TODO: handle duplicates with different prefixes
         let name_ident = escape_ident(&name.name.to_pascal_case());
-        let struct_body = &el.content.to_impl(&mut state);
+        let struct_body = &el.to_impl(&mut state);
 
         structs.append_all(quote! {
             #[derive(Debug, Clone, PartialEq)]
             pub struct #name_ident#struct_body
         });
 
-        let to_xml = match &el.content {
-            ElementContent::Literal(literal) => {
-                let inner = literal.to_xml_impl(&element_default);
-                quote! {
-                    let val = &self.0;
-                    #inner
-                }
-            }
-            content => content.to_xml_impl(&element_default),
-        };
+        let to_xml = el.to_xml_impl(&element_default);
+        let to_xml_attrs = el
+            .attributes
+            .iter()
+            .map(|attr| attr.to_xml_impl(&element_default))
+            .collect::<Vec<_>>();
 
         let name_xml = get_xml_name(&name, element_default.qualified);
         let mut element_ns = Vec::new();
@@ -104,8 +98,10 @@ pub fn generate(
                         ) -> Result<(), ::xml::writer::Error> {
                             use ::xml::writer::events::XmlEvent;
 
-                            writer.write(XmlEvent::start_element(#name_xml)
-                                #(#element_ns)*)?;
+                            let start = XmlEvent::start_element(#name_xml);
+                            #(let start = start#element_ns;)*
+                            #(#to_xml_attrs)*
+                            writer.write(start)?;
                             #to_xml
                             writer.write(XmlEvent::end_element())?;
 
