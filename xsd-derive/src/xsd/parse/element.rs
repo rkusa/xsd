@@ -20,8 +20,12 @@ where
                 kind,
                 content: ElementContent::Literal(literal),
             }),
-            LeafContent::Named(_name) => {
-                unimplemented!("<element type='non xs' />")
+            LeafContent::Named(name) => {
+                ctx.discover_type(&name);
+                Ok(ElementDefinition {
+                    kind: Kind::Root,
+                    content: ElementContent::Reference(name),
+                })
             }
         }
     } else if kind == Kind::Child {

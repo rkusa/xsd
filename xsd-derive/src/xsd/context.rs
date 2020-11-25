@@ -51,6 +51,16 @@ where
         self.elements.insert(name, Lazy::new(node, kind));
     }
 
+    pub fn discover_type(&mut self, name: &Name) {
+        let type_ = self
+            .complex_types
+            .remove(name)
+            .or_else(|| self.simple_types.remove(name));
+        if let Some(node) = type_ {
+            self.elements.insert(name.clone(), node);
+        }
+    }
+
     pub fn remove_elements(&mut self) -> impl Iterator<Item = (Name, Lazy<'a, 'input>)> {
         let elements = std::mem::take(&mut self.elements);
         elements.into_iter()

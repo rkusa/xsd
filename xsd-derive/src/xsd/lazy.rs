@@ -62,10 +62,13 @@ where
         node: Node<'a, 'input>,
         ctx: &mut Context<'a, 'input>,
     ) -> Result<ElementDefinition, XsdError> {
+        let parent = Name::new("", Namespace::None);
         match node.name() {
-            "element" => {
-                super::parse::element::parse(node, &Name::new("", Namespace::None), ctx, self.kind)
-            }
+            "element" => super::parse::element::parse(node, &parent, ctx, self.kind),
+            "complexType" => Ok(ElementDefinition {
+                kind: Kind::Virtual,
+                content: super::parse::complex_type::parse(node, &parent, ctx)?,
+            }),
             child_name => Err(XsdError::UnsupportedElement {
                 name: child_name.to_string(),
                 parent: "schema".to_string(),
