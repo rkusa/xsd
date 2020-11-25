@@ -37,7 +37,7 @@ impl ToImpl for Name {
 impl ToXmlImpl for Name {
     fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
         quote! {
-            val.to_xml_writer(writer)?;
+            val.to_xml_writer(start, writer)?;
         }
     }
 }

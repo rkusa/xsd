@@ -48,11 +48,6 @@ pub fn generate(
         });
 
         let to_xml = el.to_xml_impl(&element_default);
-        let to_xml_attrs = el
-            .attributes
-            .iter()
-            .map(|attr| attr.to_xml_impl(&element_default))
-            .collect::<Vec<_>>();
 
         let name_xml = get_xml_name(&name, element_default.qualified);
         let mut element_ns = Vec::new();
@@ -80,7 +75,8 @@ pub fn generate(
                             encoding: Some("UTF-8"),
                             standalone: None,
                         })?;
-                        self.to_xml_writer(&mut writer)?;
+                        let start = XmlEvent::start_element(#name_xml);
+                        self.to_xml_writer(start, &mut writer)?;
 
                         Ok(body)
                     }
@@ -94,14 +90,12 @@ pub fn generate(
                     impl #name_ident {
                         fn to_xml_writer<W: ::std::io::Write>(
                             &self,
+                            start: ::xml::writer::events::StartElementBuilder<'_>,
                             writer: &mut ::xml::writer::EventWriter<W>,
                         ) -> Result<(), ::xml::writer::Error> {
                             use ::xml::writer::events::XmlEvent;
 
-                            let start = XmlEvent::start_element(#name_xml);
                             #(let start = start#element_ns;)*
-                            #(#to_xml_attrs)*
-                            writer.write(start)?;
                             #to_xml
                             writer.write(XmlEvent::end_element())?;
 
@@ -115,6 +109,7 @@ pub fn generate(
                     impl #name_ident {
                         fn to_xml_writer<W: ::std::io::Write>(
                             &self,
+                            start: ::xml::writer::events::StartElementBuilder<'_>,
                             writer: &mut ::xml::writer::EventWriter<W>,
                         ) -> Result<(), ::xml::writer::Error> {
                             use ::xml::writer::events::XmlEvent;

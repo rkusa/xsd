@@ -60,7 +60,7 @@ impl ToXmlImpl for ElementContent {
                         let name_xml = get_xml_name(&el.name, element_default.qualified);
                         let inner = el.content.to_xml_impl(element_default);
                         quote! {
-                            writer.write(XmlEvent::start_element(#name_xml))?;
+                            let start = XmlEvent::start_element(#name_xml);
                             let val = &self.#name_ident;
                             #inner
                             writer.write(XmlEvent::end_element())?;

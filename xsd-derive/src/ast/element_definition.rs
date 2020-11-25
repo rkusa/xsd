@@ -37,10 +37,11 @@ impl ToImpl for ElementDefinition {
 impl ToXmlImpl for ElementDefinition {
     fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         let mut ts = TokenStream::new();
+        for attr in &self.attributes {
+            ts.append_all(attr.to_xml_impl(element_default));
+        }
+        ts.append_all(quote! { writer.write(start)?; });
         ts.append_all(self.content.to_xml_impl(element_default));
-        // for attr in &self.attributes {
-        //     ts.append_all(attr.to_xml_impl(element_default));
-        // }
         ts
     }
 }
