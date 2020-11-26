@@ -1,23 +1,72 @@
-use super::{
-    ElementDefault, ElementDefinition, FromXmlImpl, LeafDefinition, Namespaces, ToXmlImpl,
-};
-use super::{State, ToImpl};
+use std::collections::HashMap;
+
+use super::{ElementDefault, ElementDefinition, LeafDefinition, Namespaces, State};
+use inflector::Inflector;
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
+use syn::Ident;
 
 #[derive(Debug, Clone)]
 pub enum Root {
     Leaf(LeafDefinition),
+    Enum(Vec<String>),
     Element(ElementDefinition),
 }
 
-impl ToImpl for Root {
-    fn to_impl(&self, state: &mut State) -> TokenStream {
+impl Root {
+    pub fn is_enum(&self) -> bool {
+        matches!(self, Root::Enum(_))
+    }
+
+    pub fn to_declaration(&self, name: &Ident, state: &mut State) -> TokenStream {
         match self {
             Root::Leaf(def) => {
                 let inner = def.to_impl(state);
                 quote! {
                     (pub #inner);
+                }
+            }
+            Root::Enum(names) => {
+                let names = escape_enum_names(names.clone());
+                let variants = names.keys().map(|k| format_ident!("{}", k));
+                let from_str_variants = names.iter().map(|(variant, value)| {
+                    let variant = format_ident!("{}", variant);
+                    quote! {
+                        #value => #name::#variant
+                    }
+                });
+                let as_str_variants = names.iter().map(|(variant, value)| {
+                    let variant = format_ident!("{}", variant);
+                    quote! {
+                        #name::#variant => #value
+                    }
+                });
+
+                quote! {
+                    {
+                        #(#variants,)*
+                    }
+
+                    impl ::std::str::FromStr for #name {
+                        type Err = ::xsd::decode::FromXmlError;
+
+                        fn from_str(s: &str) -> Result<Self, Self::Err> {
+                            Ok(match s {
+                                #(#from_str_variants,)*
+                                _ => return Err(::xsd::decode::FromXmlError::InvalidVariant {
+                                    name: s.to_string(),
+                                })
+                            })
+                        }
+                    }
+
+                    impl #name {
+                        pub fn as_str(&self) -> &str {
+                            match self {
+                                #(#as_str_variants,)*
+                            }
+                        }
+                    }
                 }
             }
             Root::Element(def) => {
@@ -30,10 +79,8 @@ impl ToImpl for Root {
             }
         }
     }
-}
 
-impl ToXmlImpl for Root {
-    fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         match self {
             Root::Leaf(def) => {
                 let inner = def.to_xml_impl(element_default);
@@ -42,14 +89,20 @@ impl ToXmlImpl for Root {
                     #inner
                 }
             }
+            Root::Enum(_) => {
+                quote! {
+                    writer.write(start)?;
+                    let val = self.as_str();
+                    writer.write(XmlEvent::characters(&val))?;
+                }
+            }
             Root::Element(def) => def.to_xml_impl(element_default),
         }
     }
-}
 
-impl FromXmlImpl for Root {
-    fn from_xml_impl<'a>(
+    pub fn from_xml_impl<'a>(
         &self,
+        name: &Ident,
         element_default: &ElementDefault,
         namespaces: &'a Namespaces<'a>,
     ) -> TokenStream {
@@ -57,10 +110,67 @@ impl FromXmlImpl for Root {
             Root::Leaf(def) => {
                 let inner = def.from_xml_impl(element_default, namespaces);
                 quote! {
-                    (#inner)
+                    #name(#inner)
                 }
             }
-            Root::Element(def) => def.from_xml_impl(element_default, namespaces),
+            Root::Enum(_) => {
+                quote! {
+                    {
+                        let val = node.text()?;
+                       ::std::str::FromStr::from_str(val)?
+                    }
+                }
+            }
+            Root::Element(def) => {
+                let inner = def.from_xml_impl(element_default, namespaces);
+                quote! {
+                    #name#inner
+                }
+            }
         }
     }
+}
+
+fn escape_enum_names(names: Vec<String>) -> HashMap<String, String> {
+    let mut unknown_count = 0;
+    let mut enum_names = HashMap::with_capacity(names.len());
+
+    for name in names.into_iter() {
+        let mut variant_name = name
+            .chars()
+            .filter_map(|c| match c {
+                '_' | '-' => Some('_'),
+                c => {
+                    if c.is_alphanumeric() {
+                        Some(c)
+                    } else {
+                        None
+                    }
+                }
+            })
+            .collect::<String>()
+            .to_pascal_case();
+        if !variant_name.is_empty()
+            && variant_name
+                .chars()
+                .next()
+                .map(|c| !c.is_alphabetic())
+                .unwrap_or(false)
+        {
+            variant_name = format!("V{}", variant_name);
+        }
+
+        loop {
+            if variant_name.is_empty() || enum_names.contains_key(&variant_name) {
+                unknown_count += 1;
+                variant_name = format!("Variant{}", unknown_count);
+            } else {
+                break;
+            }
+        }
+
+        enum_names.insert(variant_name, name.to_string());
+    }
+
+    enum_names
 }

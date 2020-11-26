@@ -62,12 +62,10 @@ where
     ) -> Result<Root, XsdError> {
         match node.name() {
             "element" => super::parse::element::parse_root(node, ctx),
-            "complexType" => Ok(Root::Element(super::parse::complex_type::parse(
-                node,
-                &Name::new("", Namespace::None),
-                ctx,
-            )?)),
-            "simpleType" => Ok(Root::Leaf(super::parse::simple_type::parse(node, ctx)?)),
+            "complexType" => {
+                super::parse::complex_type::parse(node, &Name::new("", Namespace::None), ctx)
+            }
+            "simpleType" => super::parse::simple_type::parse(node, ctx),
             child_name => Err(XsdError::UnsupportedElement {
                 name: child_name.to_string(),
                 parent: "schema".to_string(),

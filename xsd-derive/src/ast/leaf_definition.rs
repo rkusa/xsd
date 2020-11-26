@@ -1,4 +1,4 @@
-use super::{ElementDefault, FromXmlImpl, LeafContent, Namespaces, State, ToImpl, ToXmlImpl};
+use super::{ElementDefault, LeafContent, Namespaces, State};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -10,32 +10,28 @@ pub struct LeafDefinition {
     // pub fixed: Option<String>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Restriction {
-    // MinLength(usize),
-    // MaxLength(usize),
-    // Pattern(String),
-    // MinInclusive(Decimal),
-    // MaxInclusive(Decimal),
-    // FractionDigits(usize),
-    // TotalDigits(usize),
-    Enum(Vec<String>),
-}
+pub type Restriction = ();
+// #[derive(Debug, PartialEq, Clone)]
+// pub enum Restriction {
+//     // MinLength(usize),
+//     // MaxLength(usize),
+//     // Pattern(String),
+//     // MinInclusive(Decimal),
+//     // MaxInclusive(Decimal),
+//     // FractionDigits(usize),
+//     // TotalDigits(usize),
+// }
 
-impl ToImpl for LeafDefinition {
-    fn to_impl(&self, state: &mut State) -> TokenStream {
+impl LeafDefinition {
+    pub fn to_impl(&self, state: &mut State) -> TokenStream {
         self.content.to_impl(state)
     }
-}
 
-impl ToXmlImpl for LeafDefinition {
-    fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         self.content.to_xml_impl(element_default)
     }
-}
 
-impl FromXmlImpl for LeafDefinition {
-    fn from_xml_impl<'a>(
+    pub fn from_xml_impl<'a>(
         &self,
         element_default: &ElementDefault,
         namespaces: &'a Namespaces<'a>,

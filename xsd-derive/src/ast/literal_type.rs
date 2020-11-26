@@ -1,4 +1,4 @@
-use super::{ElementDefault, FromXmlImpl, Namespaces, State, ToImpl, ToXmlImpl};
+use super::{ElementDefault, State};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -40,8 +40,8 @@ impl LiteralType {
     }
 }
 
-impl ToImpl for LiteralType {
-    fn to_impl(&self, _state: &mut State) -> TokenStream {
+impl LiteralType {
+    pub fn to_impl(&self, _state: &mut State) -> TokenStream {
         use LiteralType::*;
         match self {
             String => quote! { String },
@@ -59,20 +59,12 @@ impl ToImpl for LiteralType {
             Any => quote! { () },
         }
     }
-}
 
-impl ToXmlImpl for LiteralType {
-    fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
         quote!(val.to_string())
     }
-}
 
-impl FromXmlImpl for LiteralType {
-    fn from_xml_impl<'a>(
-        &self,
-        _element_default: &ElementDefault,
-        _namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn from_str_impl(&self) -> TokenStream {
         let type_ = self.xsd_name();
         quote! {
             std::str::FromStr::from_str(val).map_err(|err| {

@@ -51,6 +51,8 @@ pub enum XsdError {
     UnsupportedType { name: String, range: Range<usize> },
     #[error("Encountered circular type while parsing {name}")]
     CircularType { name: String, range: Range<usize> },
+    #[error("Missing simpleType `{name}`")]
+    MissingSimpleType { name: String, range: Range<usize> },
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -81,6 +83,7 @@ impl XsdError {
             // XsdError::ParseDecimal { range, .. } => Some(range),
             XsdError::UnsupportedType { range, .. } => Some(range),
             XsdError::CircularType { range, .. } => Some(range),
+            XsdError::MissingSimpleType { range, .. } => Some(range),
         }
     }
 }

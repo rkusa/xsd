@@ -40,9 +40,9 @@ where
 
     Ok(ElementDefinition {
         attributes,
-        content: ElementContent::Leaf(LeafDefinition {
+        content: Some(ElementContent::Leaf(LeafDefinition {
             content: LeafContent::Literal(type_),
             restrictions: Vec::new(),
-        }),
+        })),
     })
 }

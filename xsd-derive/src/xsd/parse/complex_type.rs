@@ -1,4 +1,4 @@
-use crate::ast::{ElementDefinition, Name};
+use crate::ast::{ElementDefinition, Name, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -7,7 +7,7 @@ pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
     ctx: &mut Context<'a, 'input>,
-) -> Result<ElementDefinition, XsdError>
+) -> Result<Root, XsdError>
 where
     'a: 'input,
 {
@@ -17,18 +17,14 @@ where
     // TODO: simpleContent xor complexContent xor the following
 
     if let Some(child) = children.remove("simpleContent", Some(NS_XSD)) {
-        return super::simple_content::parse(child, ctx);
+        return Ok(Root::Element(super::simple_content::parse(child, ctx)?));
     }
 
     let content = if let Some(child) = children.remove("sequence", Some(NS_XSD)) {
         // TODO: or all, choice
-        super::sequence::parse(child, parent, ctx)?
+        Some(super::sequence::parse(child, parent, ctx)?)
     } else {
-        return Err(XsdError::MissingElement {
-            name: "sequence|simpleContent".to_string(),
-            parent: node.name().to_string(),
-            range: node.range(),
-        });
+        None
     };
 
     // read all attributes
@@ -39,8 +35,8 @@ where
 
     children.prevent_unvisited_children()?;
 
-    Ok(ElementDefinition {
+    Ok(Root::Element(ElementDefinition {
         attributes,
         content,
-    })
+    }))
 }

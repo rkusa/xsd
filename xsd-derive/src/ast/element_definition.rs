@@ -1,6 +1,4 @@
-use super::{
-    Attribute, ElementContent, ElementDefault, FromXmlImpl, Namespaces, State, ToImpl, ToXmlImpl,
-};
+use super::{Attribute, ElementContent, ElementDefault, Namespaces, State};
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
@@ -8,39 +6,45 @@ use quote::TokenStreamExt;
 #[derive(Debug, Clone)]
 pub struct ElementDefinition {
     pub attributes: Vec<Attribute>,
-    pub content: ElementContent,
+    pub content: Option<ElementContent>,
 }
 
-impl ToImpl for ElementDefinition {
-    fn to_impl(&self, state: &mut State) -> TokenStream {
+impl ElementDefinition {
+    pub fn to_impl(&self, state: &mut State) -> TokenStream {
         let mut ts = TokenStream::new();
-        ts.append_all(self.content.to_impl(state));
+        if let Some(content) = &self.content {
+            ts.append_all(content.to_impl(state));
+        }
         for attr in &self.attributes {
             ts.append_all(attr.to_impl(state));
         }
         ts
     }
-}
 
-impl ToXmlImpl for ElementDefinition {
-    fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         let mut ts = TokenStream::new();
         for attr in &self.attributes {
             ts.append_all(attr.to_xml_impl(element_default));
         }
-        ts.append_all(self.content.to_xml_impl(element_default));
+        if let Some(content) = &self.content {
+            ts.append_all(content.to_xml_impl(element_default));
+        } else {
+            ts.append_all(quote! {
+                writer.write(start)?;
+            });
+        }
         ts
     }
-}
 
-impl FromXmlImpl for ElementDefinition {
-    fn from_xml_impl<'a>(
+    pub fn from_xml_impl<'a>(
         &self,
         element_default: &ElementDefault,
         namespaces: &'a Namespaces<'a>,
     ) -> TokenStream {
         let mut ts = TokenStream::new();
-        ts.append_all(self.content.from_xml_impl(element_default, namespaces));
+        if let Some(content) = &self.content {
+            ts.append_all(content.from_xml_impl(element_default, namespaces));
+        }
         for attr in &self.attributes {
             ts.append_all(attr.from_xml_impl(element_default, namespaces));
         }

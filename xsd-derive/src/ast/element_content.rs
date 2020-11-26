@@ -1,9 +1,6 @@
 use crate::generator::escape_ident;
 
-use super::{
-    get_xml_name, ElementDefault, FromXmlImpl, Leaf, LeafDefinition, Namespaces, ToXmlImpl,
-};
-use super::{State, ToImpl};
+use super::{get_xml_name, ElementDefault, Leaf, LeafDefinition, Namespaces, State};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -14,8 +11,8 @@ pub enum ElementContent {
     Leaves(Vec<Leaf>),
 }
 
-impl ToImpl for ElementContent {
-    fn to_impl(&self, state: &mut State) -> TokenStream {
+impl ElementContent {
+    pub fn to_impl(&self, state: &mut State) -> TokenStream {
         match self {
             ElementContent::Leaf(leaf) => {
                 let inner = leaf.to_impl(state);
@@ -36,10 +33,8 @@ impl ToImpl for ElementContent {
             }
         }
     }
-}
 
-impl ToXmlImpl for ElementContent {
-    fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
         match &self {
             ElementContent::Leaf(leaf) => {
                 let inner = leaf.to_xml_impl(element_default);
@@ -70,10 +65,8 @@ impl ToXmlImpl for ElementContent {
             }
         }
     }
-}
 
-impl FromXmlImpl for ElementContent {
-    fn from_xml_impl<'a>(
+    pub fn from_xml_impl<'a>(
         &self,
         element_default: &ElementDefault,
         namespaces: &'a Namespaces<'a>,

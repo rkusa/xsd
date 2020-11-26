@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="ArticleState">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="DRAFT"/>
+      <xs:enumeration value="PUBLISHED"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="article">
+    <xs:complexType>
+      <xs:attribute name="state" type="ArticleState" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

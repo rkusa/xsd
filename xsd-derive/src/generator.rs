@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::{fs::read_to_string, path::Path};
 
-use crate::ast::{get_xml_name, ElementDefault, FromXmlImpl, ToImpl, ToXmlImpl};
+use crate::ast::{get_xml_name, ElementDefault};
 use crate::error::GeneratorError;
 use crate::xsd::Schema;
 use inflector::Inflector;
@@ -36,15 +36,20 @@ pub fn generate(
 
     let mut state = ();
     for (name, el) in schema.elements() {
-        // panic!("{:#?}", el);
+        // eprintln!("{:#?}", el);
 
         // TODO: handle duplicates with different prefixes
         let name_ident = escape_ident(&name.name.to_pascal_case());
-        let struct_body = &el.to_impl(&mut state);
+        let kind = if el.is_enum() {
+            quote!(enum)
+        } else {
+            quote!(struct)
+        };
+        let declaration = &el.to_declaration(&name_ident, &mut state);
 
         structs.append_all(quote! {
             #[derive(Debug, Clone, PartialEq)]
-            pub struct #name_ident#struct_body
+            pub #kind #name_ident#declaration
         });
 
         let to_xml = el.to_xml_impl(&element_default);
@@ -110,7 +115,7 @@ pub fn generate(
 
         let name_xml = &name.name;
         let namespace_xml = name.namespace.from_xml_impl(&element_default, &namespaces);
-        let from_xml = el.from_xml_impl(&element_default, &namespaces);
+        let from_xml = el.from_xml_impl(&name_ident, &element_default, &namespaces);
 
         structs.append_all(quote! {
             impl #name_ident {
@@ -121,7 +126,7 @@ pub fn generate(
                 }
 
                 fn from_xml_node(node: &::xsd::decode::Node) -> Result<Self, ::xsd::decode::FromXmlError> {
-                    Ok(#name_ident#from_xml)
+                    Ok(#from_xml)
                 }
             }
         });
@@ -136,7 +141,7 @@ pub fn generate(
         .map(|(_, items)| items.clone())
         .unwrap_or_default();
 
-    Ok(quote! {
+    let result = quote! {
         #(#attrs)*
         #vis mod #ident {
             #(#items
@@ -144,7 +149,10 @@ pub fn generate(
 
             #structs
         }
-    })
+    };
+
+    // eprintln!("{}", result.to_string());
+    Ok(result)
 }
 
 pub fn escape_ident(name: &str) -> syn::Ident {

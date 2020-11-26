@@ -1,4 +1,4 @@
-use crate::ast::{LeafContent, LeafDefinition, Restriction};
+use crate::ast::{LeafContent, LeafDefinition, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -6,7 +6,7 @@ use crate::xsd::XsdError;
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
     ctx: &mut Context<'a, 'input>,
-) -> Result<LeafDefinition, XsdError>
+) -> Result<Root, XsdError>
 where
     'a: 'input,
 {
@@ -29,7 +29,7 @@ where
 
     children.prevent_unvisited_children()?;
 
-    let mut restrictions = Vec::new();
+    let restrictions = Vec::new();
     let mut enumerations = Vec::new();
 
     for child in restriction.children().namespace(NS_XSD).iter() {
@@ -47,12 +47,12 @@ where
         }
     }
 
-    if !enumerations.is_empty() {
-        restrictions.push(Restriction::Enum(enumerations));
-    }
-
-    Ok(LeafDefinition {
-        content: LeafContent::Literal(type_),
-        restrictions,
+    Ok(if enumerations.is_empty() {
+        Root::Leaf(LeafDefinition {
+            content: LeafContent::Literal(type_),
+            restrictions,
+        })
+    } else {
+        Root::Enum(enumerations)
     })
 }

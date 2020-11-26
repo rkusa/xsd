@@ -13,6 +13,9 @@ where
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
         let content = ctx.get_type_name(attr)?;
+        if let LeafContent::Named(name) = &content {
+            ctx.discover_type(name);
+        }
         Ok(Root::Leaf(LeafDefinition {
             content,
             restrictions: Vec::new(),
@@ -28,9 +31,9 @@ where
         let result = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
             let name = node.try_attribute("name")?.value();
             let name = ctx.get_node_name(&name, false);
-            Root::Element(super::complex_type::parse(child, &name, ctx)?)
+            super::complex_type::parse(child, &name, ctx)?
         } else if let Some(child) = children.remove("simpleType", Some(NS_XSD)) {
-            Root::Leaf(super::simple_type::parse(child, ctx)?)
+            super::simple_type::parse(child, ctx)?
         } else {
             return Err(XsdError::MissingElement {
                 name: "simpleType|complexType".to_string(),

@@ -1,6 +1,6 @@
 use crate::generator::escape_ident;
 
-use super::{ElementDefault, FromXmlImpl, Namespaces, State, ToImpl, ToXmlImpl};
+use super::{ElementDefault, Namespaces, State};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -27,23 +27,19 @@ impl Name {
     }
 }
 
-impl ToImpl for Name {
-    fn to_impl(&self, _state: &mut State) -> TokenStream {
+impl Name {
+    pub fn to_impl(&self, _state: &mut State) -> TokenStream {
         let name_ident = escape_ident(&self.name.to_pascal_case());
         quote!(#name_ident)
     }
-}
 
-impl ToXmlImpl for Name {
-    fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
         quote! {
             val.to_xml_writer_flattened(start, writer)?;
         }
     }
-}
 
-impl FromXmlImpl for Name {
-    fn from_xml_impl<'a>(
+    pub fn from_xml_impl<'a>(
         &self,
         _element_default: &ElementDefault,
         _namespaces: &'a Namespaces<'a>,
@@ -53,10 +49,16 @@ impl FromXmlImpl for Name {
             #name_ident::from_xml_node(&node)?
         }
     }
+
+    pub fn from_str_impl(&self) -> TokenStream {
+        quote! {
+            ::std::str::FromStr::from_str(&val)?
+        }
+    }
 }
 
-impl FromXmlImpl for Namespace {
-    fn from_xml_impl<'a>(
+impl Namespace {
+    pub fn from_xml_impl<'a>(
         &self,
         element_default: &ElementDefault,
         _namespaces: &'a Namespaces<'a>,

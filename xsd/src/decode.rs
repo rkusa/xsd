@@ -15,6 +15,8 @@ pub enum FromXmlError {
     MissingAttribute { name: String },
     #[error("Expected element {name} to contain text content")]
     TextExpected { name: String },
+    #[error("Encountered invalid enum variant {name}")]
+    InvalidVariant { name: String },
     #[error("Failed to parse type {type_} from {value}: {err}")]
     ParseType {
         type_: String,
