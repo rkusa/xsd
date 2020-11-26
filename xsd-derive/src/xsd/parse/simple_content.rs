@@ -10,6 +10,8 @@ pub fn parse<'a, 'input>(
 where
     'a: 'input,
 {
+    node.prevent_unvisited_attributes()?;
+
     let mut children = node.children().namespace(NS_XSD).collect();
     let extension = children.try_remove("extension", Some(NS_XSD))?;
     children.prevent_unvisited_children()?;

@@ -32,5 +32,12 @@ where
         }
     }
 
-    Ok(Attribute { name, content })
+    let default = node.attribute("default").map(|a| a.value().to_string());
+    node.prevent_unvisited_attributes()?;
+
+    Ok(Attribute {
+        name,
+        content,
+        default,
+    })
 }

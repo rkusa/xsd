@@ -11,6 +11,7 @@ pub fn parse<'a, 'input>(
 where
     'a: 'input,
 {
+    node.prevent_unvisited_attributes()?;
     let mut children = node.children().namespace(NS_XSD).collect();
     // TODO: (annotation?,(simpleContent|complexContent|)
     // TODO: annotation

@@ -17,6 +17,7 @@ pub fn parse(node: Node<'_, '_>) -> Result<Option<String>, XsdError> {
         });
 
     children.prevent_unvisited_children()?;
+    node.prevent_unvisited_attributes()?;
 
     Ok(docs)
 }

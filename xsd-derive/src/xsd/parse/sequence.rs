@@ -11,8 +11,9 @@ pub fn parse<'a, 'input>(
 where
     'a: 'input,
 {
-    let mut leaves = Vec::new();
+    node.prevent_unvisited_attributes()?;
 
+    let mut leaves = Vec::new();
     for child in node.children().namespace(NS_XSD).iter() {
         match child.name() {
             "element" => {

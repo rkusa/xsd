@@ -12,6 +12,7 @@ where
 {
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
+        node.prevent_unvisited_attributes()?;
         let content = ctx.get_type_name(attr)?;
         if let LeafContent::Named(name) = &content {
             ctx.discover_type(name);
@@ -21,6 +22,7 @@ where
             restrictions: Vec::new(),
         }))
     } else {
+        node.prevent_unvisited_attributes()?;
         let mut children = node.children().namespace(NS_XSD).collect();
         // TODO: actually use docs
         let _docs = children

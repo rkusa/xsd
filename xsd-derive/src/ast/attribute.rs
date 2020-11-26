@@ -8,6 +8,7 @@ use quote::quote;
 pub struct Attribute {
     pub name: Name,
     pub content: LeafContent,
+    pub default: Option<String>,
 }
 
 impl Attribute {
@@ -24,10 +25,22 @@ impl Attribute {
             LeafContent::Literal(literal) => literal.to_xml_impl(element_default),
             LeafContent::Named(_) => quote! { val.as_str() },
         };
-        quote! {
-            let val = &self.#name_ident;
-            let val = #inner;
-            let start = start.attr(#name_xml, &val);
+        if let Some(default) = &self.default {
+            quote! {
+                let val = &self.#name_ident;
+                let val = #inner;
+                let start = if val == #default {
+                    start
+                } else {
+                    start.attr(#name_xml, &val)
+                };
+            }
+        } else {
+            quote! {
+                let val = &self.#name_ident;
+                let val = #inner;
+                let start = start.attr(#name_xml, &val);
+            }
         }
     }
 
@@ -39,10 +52,19 @@ impl Attribute {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
         let inner = self.content.from_str_impl();
-        quote! {
-            #name_ident: {
-                let val = node.try_attribute(#name_xml)?;
-                #inner
+        if let Some(default) = &self.default {
+            quote! {
+                #name_ident: {
+                    let val = node.attribute(#name_xml).unwrap_or(#default);
+                    #inner
+                }
+            }
+        } else {
+            quote! {
+                #name_ident: {
+                    let val = node.try_attribute(#name_xml)?;
+                    #inner
+                }
             }
         }
     }
