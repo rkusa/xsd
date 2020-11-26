@@ -7,8 +7,11 @@ use pretty_assertions::assert_eq;
 fn complex_type_choice() {
     let xml = include_str!("./xsd/complex_type_choice.xml");
     let expected = schema::Article {
-        author: schema::Author::User(schema::User {
+        created_by: schema::Author::User(schema::User {
             name: "Foobar".to_string(),
+        }),
+        posted_by: schema::ArticlePostedBy::Bot(schema::Bot {
+            handle: "Foobot".to_string(),
         }),
     };
     assert_eq!(schema::Article::from_xml(xml).unwrap(), expected);

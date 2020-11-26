@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <article>
-  <author>
+  <createdBy>
     <user name="Foobar" />
-  </author>
+  </createdBy>
+  <postedBy>
+    <bot handle="Foobot" />
+  </postedBy>
 </article>

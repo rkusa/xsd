@@ -15,7 +15,15 @@
   <xs:element name="article">
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="author" type="Author" />
+        <xs:element name="createdBy" type="Author" />
+        <xs:element name="postedBy">
+          <xs:complexType>
+            <xs:choice>
+              <xs:element name="user" type="User" />
+              <xs:element name="bot" type="Bot" />
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
