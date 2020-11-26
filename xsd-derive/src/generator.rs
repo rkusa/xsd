@@ -121,7 +121,7 @@ pub fn generate(
             impl #name_ident {
                 pub fn from_xml(input: impl AsRef<str>) -> Result<Self, ::xsd::decode::FromXmlError> {
                     let doc = ::xsd::decode::decode(input.as_ref())?;
-                    let node = doc.try_child(#name_xml, #namespace_xml)?;
+                    let node = doc.child(#name_xml, #namespace_xml).try_take()?;
                     Self::from_xml_node(&node)
                 }
 

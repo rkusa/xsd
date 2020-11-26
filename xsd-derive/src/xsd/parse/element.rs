@@ -1,6 +1,8 @@
-use crate::ast::{LeafContent, LeafDefinition, Name, Root};
+use std::str::FromStr;
+
+use crate::ast::{LeafContent, LeafDefinition, MaxOccurs, MinOccurs, Name, Root};
 use crate::xsd::context::{Context, NS_XSD};
-use crate::xsd::node::Node;
+use crate::xsd::node::{Attribute, Node};
 use crate::xsd::XsdError;
 
 pub fn parse_root<'a, 'input>(
@@ -20,6 +22,8 @@ where
         Ok(Root::Leaf(LeafDefinition {
             content,
             restrictions: Vec::new(),
+            min_occurs: MinOccurs::default(),
+            max_occurs: MaxOccurs::default(),
         }))
     } else {
         node.prevent_unvisited_attributes()?;
@@ -58,8 +62,13 @@ pub fn parse_child<'a, 'input>(
 where
     'a: 'input,
 {
+    let min_occurs = parse_min_occurs(node.attribute("minOccurs"))?;
+    let max_occurs = parse_max_occurs(node.attribute("maxOccurs"))?;
+
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
+        node.prevent_unvisited_attributes()?;
+
         let content = ctx.get_type_name(attr)?;
         if let LeafContent::Named(name) = &content {
             ctx.discover_type(name);
@@ -67,10 +76,14 @@ where
         Ok(LeafDefinition {
             content,
             restrictions: Vec::new(),
+            min_occurs,
+            max_occurs,
         })
     } else {
         // create a new virtual type
         let name = node.try_attribute("name")?.value();
+        node.prevent_unvisited_attributes()?;
+
         let mut virtual_name = parent.name.to_string();
         if !name.is_empty() {
             virtual_name += (&name[0..1]).to_ascii_uppercase().as_str();
@@ -81,6 +94,39 @@ where
         Ok(LeafDefinition {
             content: LeafContent::Named(name),
             restrictions: Vec::new(),
+            min_occurs,
+            max_occurs,
         })
+    }
+}
+
+pub fn parse_min_occurs(occurs: Option<&Attribute<'_, '_>>) -> Result<MinOccurs, XsdError> {
+    match occurs {
+        Some(attr) => Ok(MinOccurs(u32::from_str(&attr.value()).map_err(|err| {
+            XsdError::ParseInt {
+                err,
+                range: attr.range(),
+            }
+        })?)),
+        None => Ok(MinOccurs::default()),
+    }
+}
+
+pub fn parse_max_occurs(occurs: Option<&Attribute<'_, '_>>) -> Result<MaxOccurs, XsdError> {
+    match occurs {
+        Some(attr) => {
+            let val = attr.value();
+            if &val == "unbounded" {
+                Ok(MaxOccurs::Unbounded)
+            } else {
+                Ok(MaxOccurs::Number(u32::from_str(&val).map_err(|err| {
+                    XsdError::ParseInt {
+                        err,
+                        range: attr.range(),
+                    }
+                })?))
+            }
+        }
+        None => Ok(MaxOccurs::default()),
     }
 }

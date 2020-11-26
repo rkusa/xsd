@@ -43,11 +43,11 @@ pub enum XsdError {
     MissingNamespace { prefix: String, range: Range<usize> },
     // #[error("Multiple types found inside `{name}`")]
     // MultipleTypes { name: String, range: Range<usize> },
-    // #[error("Failed to parse int value")]
-    // ParseInt {
-    //     err: std::num::ParseIntError,
-    //     range: Range<usize>,
-    // },
+    #[error("Failed to parse int value")]
+    ParseInt {
+        err: std::num::ParseIntError,
+        range: Range<usize>,
+    },
     // #[error("Failed to parse decimal value")]
     // ParseDecimal {
     //     err: rust_decimal::Error,
@@ -86,7 +86,7 @@ impl XsdError {
             // XsdError::MissingAttribute { range, .. } => Some(range),
             XsdError::MissingNamespace { range, .. } => Some(range),
             // XsdError::MultipleTypes { range, .. } => Some(range),
-            // XsdError::ParseInt { range, .. } => Some(range),
+            XsdError::ParseInt { range, .. } => Some(range),
             // XsdError::ParseDecimal { range, .. } => Some(range),
             XsdError::UnsupportedType { range, .. } => Some(range),
             XsdError::CircularType { range, .. } => Some(range),

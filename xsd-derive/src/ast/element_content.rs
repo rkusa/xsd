@@ -111,8 +111,7 @@ impl ElementContent {
                         } else {
                             quote! {
                                #name_ident: {
-                                   let node = node.try_child(#name_xml, #namespace_xml)?;
-                                   let val = node.text()?;
+                                   let node = node.child(#name_xml, #namespace_xml);
                                    #inner
                                }
                             }

@@ -1,4 +1,6 @@
-use crate::ast::{ElementContent, ElementDefinition, LeafContent, LeafDefinition};
+use crate::ast::{
+    ElementContent, ElementDefinition, LeafContent, LeafDefinition, MaxOccurs, MinOccurs,
+};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -47,6 +49,8 @@ where
         content: Some(ElementContent::Leaf(LeafDefinition {
             content: LeafContent::Literal(type_),
             restrictions: Vec::new(),
+            min_occurs: MinOccurs::default(),
+            max_occurs: MaxOccurs::default(),
         })),
     })
 }

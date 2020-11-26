@@ -36,28 +36,47 @@ pub fn decode(input: &str) -> Result<Document<'_>, FromXmlError> {
 }
 
 impl<'a> Document<'a> {
-    pub fn child(&self, name: &str, namespace: Option<&str>) -> Option<Node<'_>> {
+    pub fn child(&'a self, name: &'a str, namespace: Option<&'a str>) -> Child<'a> {
         let root = self.0.root_element();
         let tag_name = root.tag_name();
-        if !root.is_element() || tag_name.name() != name || tag_name.namespace() != namespace {
-            None
-        } else {
-            Some(Node(root))
+        let node =
+            if !root.is_element() || tag_name.name() != name || tag_name.namespace() != namespace {
+                None
+            } else {
+                Some(Node(root))
+            };
+        Child {
+            name,
+            namespace,
+            node,
         }
     }
+}
 
-    pub fn try_child(&self, name: &str, namespace: Option<&str>) -> Result<Node<'_>, FromXmlError> {
-        self.child(name, namespace)
-            .ok_or_else(|| FromXmlError::MissingElement {
-                name: name.to_string(),
-                namespace: namespace.map(String::from),
-            })
+pub struct Child<'a> {
+    name: &'a str,
+    namespace: Option<&'a str>,
+    node: Option<Node<'a>>,
+}
+
+impl<'a> Child<'a> {
+    pub fn take(self) -> Option<Node<'a>> {
+        self.node
+    }
+
+    pub fn try_take(mut self) -> Result<Node<'a>, FromXmlError> {
+        let node = self.node.take();
+        node.ok_or_else(|| FromXmlError::MissingElement {
+            name: self.name.to_string(),
+            namespace: self.namespace.map(String::from),
+        })
     }
 }
 
 impl<'a> Node<'a> {
-    pub fn child(&self, name: &str, namespace: Option<&str>) -> Option<Node<'_>> {
-        self.0
+    pub fn child(&'a self, name: &'a str, namespace: Option<&'a str>) -> Child<'a> {
+        let node = self
+            .0
             .children()
             .find(|child| {
                 if !child.is_element() {
@@ -67,15 +86,16 @@ impl<'a> Node<'a> {
                 let tag_name = child.tag_name();
                 tag_name.name() == name && tag_name.namespace() == namespace
             })
-            .map(Node)
+            .map(Node);
+        Child {
+            name,
+            namespace,
+            node,
+        }
     }
 
-    pub fn try_child(&self, name: &str, namespace: Option<&str>) -> Result<Node<'_>, FromXmlError> {
-        self.child(name, namespace)
-            .ok_or_else(|| FromXmlError::MissingElement {
-                name: name.to_string(),
-                namespace: namespace.map(String::from),
-            })
+    pub fn try_take(&self) -> Result<&Node<'a>, FromXmlError> {
+        Ok(self)
     }
 
     pub fn children(
