@@ -1,14 +1,16 @@
 use std::collections::HashMap;
+use std::mem;
 
 use super::lazy::Lazy;
 use super::node::{Attribute, Node};
 use super::XsdError;
-use crate::ast::{LeafContent, LiteralType, Name, Namespace};
+use crate::ast::{LeafContent, LiteralType, Name, Namespace, Root};
 
 pub struct Context<'a, 'input> {
     simple_types: HashMap<Name, Lazy<'a, 'input>>,
     complex_types: HashMap<Name, Lazy<'a, 'input>>,
     elements: HashMap<Name, Lazy<'a, 'input>>,
+    roots: HashMap<Name, Root>,
     default_namespace: Option<&'input str>,
     target_namespace: Option<&'a str>,
     namespaces: HashMap<&'input str, &'input str>,
@@ -32,6 +34,7 @@ where
             simple_types: HashMap::new(),
             complex_types: HashMap::new(),
             elements: HashMap::new(),
+            roots: HashMap::new(),
             default_namespace: schema.default_namespace(),
             target_namespace,
             namespaces,
@@ -49,6 +52,14 @@ where
 
     pub fn add_element(&mut self, name: Name, node: Node<'a, 'input>) {
         self.elements.insert(name, Lazy::new(node));
+    }
+
+    pub fn add_root(&mut self, name: Name, root: Root) {
+        self.roots.insert(name, root);
+    }
+
+    pub fn take_roots(&mut self) -> HashMap<Name, Root> {
+        mem::take(&mut self.roots)
     }
 
     pub fn discover_type(&mut self, name: &Name) {

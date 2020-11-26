@@ -17,6 +17,8 @@ pub enum FromXmlError {
     TextExpected { name: String },
     #[error("Encountered invalid enum variant {name}")]
     InvalidVariant { name: String },
+    #[error("Could not find valid variant for choice")]
+    MissingVariant,
     #[error("Failed to parse type {type_} from {value}: {err}")]
     ParseType {
         type_: String,

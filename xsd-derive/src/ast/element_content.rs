@@ -50,11 +50,22 @@ impl ElementContent {
                         let name_ident = escape_ident(&el.name.name.to_snake_case());
                         let name_xml = get_xml_name(&el.name, element_default.qualified);
                         let inner = el.definition.to_xml_impl(element_default);
-                        quote! {
-                            let start = XmlEvent::start_element(#name_xml);
-                            let val = &self.#name_ident;
-                            #inner
-                            writer.write(XmlEvent::end_element())?;
+                        if el.is_virtual {
+                            // We don't really want to create a wrapping element here but still
+                            // require a `start` var even though that it will not be used.
+                            // TODO: is there a better way?
+                            quote! {
+                                let start = XmlEvent::start_element(#name_xml);
+                                let val = &self.#name_ident;
+                                #inner
+                            }
+                        } else {
+                            quote! {
+                                let start = XmlEvent::start_element(#name_xml);
+                                let val = &self.#name_ident;
+                                #inner
+                                writer.write(XmlEvent::end_element())?;
+                            }
                         }
                     })
                     .collect::<Vec<_>>();
@@ -92,11 +103,20 @@ impl ElementContent {
                             .namespace
                             .from_xml_impl(&element_default, &namespaces);
                         let inner = el.definition.from_xml_impl(element_default, namespaces);
-                        quote! { #name_ident: {
-                            let node = node.try_child(#name_xml, #namespace_xml)?;
-                            let val = node.text()?;
-                            #inner
-                        } }
+
+                        if el.is_virtual {
+                            quote! {
+                               #name_ident: #inner
+                            }
+                        } else {
+                            quote! {
+                               #name_ident: {
+                                   let node = node.try_child(#name_xml, #namespace_xml)?;
+                                   let val = node.text()?;
+                                   #inner
+                               }
+                            }
+                        }
                     })
                     .collect::<Vec<_>>();
                 quote!(#(#properties,)*)

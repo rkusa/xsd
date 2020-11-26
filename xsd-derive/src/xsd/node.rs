@@ -24,8 +24,12 @@ pub enum NodeError {
         attribute_value: Option<String>,
         range: Range<usize>,
     },
-    #[error("Missing required attribute {name}")]
-    MissingAttribute { name: String, range: Range<usize> },
+    #[error("Missing required attribute `{name}` on element `{element}`")]
+    MissingAttribute {
+        name: String,
+        element: String,
+        range: Range<usize>,
+    },
     #[error("Expected element {name} to contain text content")]
     TextExpected { name: String, range: Range<usize> },
     #[error("Encountered unsupported attribute `{name}` in `{element}`")]
@@ -147,6 +151,7 @@ impl<'a, 'input> Node<'a, 'input> {
         self.attribute(name)
             .ok_or_else(|| NodeError::MissingAttribute {
                 name: name.to_string(),
+                element: self.name().to_string(),
                 range: self.range(),
             })
     }

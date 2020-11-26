@@ -4,4 +4,5 @@ use super::{LeafDefinition, Name};
 pub struct Leaf {
     pub name: Name,
     pub definition: LeafDefinition,
+    pub is_virtual: bool,
 }

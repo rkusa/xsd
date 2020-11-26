@@ -116,6 +116,8 @@ impl Schema {
             }
         }
 
+        elements.extend(ctx.take_roots());
+
         Ok(Schema {
             elements,
             target_namespace,

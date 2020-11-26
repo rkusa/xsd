@@ -1,4 +1,5 @@
-use crate::ast::{LeafContent, LeafDefinition, Root};
+use crate::ast::Namespace::None;
+use crate::ast::{LeafContent, LeafDefinition, Name, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -37,7 +38,10 @@ where
     for child in restriction.children().namespace(NS_XSD).iter() {
         match child.name() {
             "enumeration" => {
-                enumerations.push(child.try_attribute("value")?.value().into_owned());
+                enumerations.push(Name::new(
+                    child.try_attribute("value")?.value().into_owned(),
+                    None,
+                ));
             }
             child_name => {
                 return Err(XsdError::UnsupportedElement {

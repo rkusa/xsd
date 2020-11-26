@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="User">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="Bot">
+    <xs:sequence>
+      <xs:element name="handle" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="article">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="body" type="xs:string" />
+        <xs:choice>
+          <xs:element name="user" type="User" />
+          <xs:element name="bot" type="Bot" />
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
