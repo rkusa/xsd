@@ -1,5 +1,5 @@
 use crate::ast::Namespace::None;
-use crate::ast::{LeafContent, LeafDefinition, MaxOccurs, MinOccurs, Name, Root};
+use crate::ast::{LeafContent, LeafDefinition, Name, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -57,8 +57,6 @@ where
         Root::Leaf(LeafDefinition {
             content: LeafContent::Literal(type_),
             restrictions,
-            min_occurs: MinOccurs::default(),
-            max_occurs: MaxOccurs::default(),
         })
     } else {
         Root::Enum(enumerations)

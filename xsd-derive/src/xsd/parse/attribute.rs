@@ -51,7 +51,7 @@ where
             name: "default".to_string(),
             element: node.name().to_string(),
             range: node.range(),
-        })
+        });
     }
 
     node.prevent_unvisited_attributes()?;

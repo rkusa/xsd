@@ -181,7 +181,7 @@ impl Root {
                     let name_xml = &name.name;
                     let namespace_xml = name.namespace.from_xml_impl(&element_default, &namespaces);
                     quote! {
-                        if let Some(node) = node.child(#name_xml, #namespace_xml).take() {
+                        if let Some(node) = node.child(#name_xml, #namespace_xml) {
                              Self::#ident(#ident::from_xml_node(&node)?)
                         }
                     }

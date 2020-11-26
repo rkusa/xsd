@@ -17,12 +17,7 @@ where
     for child in node.children().namespace(NS_XSD).iter() {
         match child.name() {
             "element" => {
-                let name = ctx.get_node_name(&child.try_attribute("name")?.value(), false);
-                variants.push(Leaf {
-                    name,
-                    definition: super::element::parse_child(child, parent, ctx)?,
-                    is_virtual: false,
-                });
+                variants.push(super::element::parse_child(child, parent, ctx)?);
             }
             child_name => {
                 return Err(XsdError::UnsupportedElement {

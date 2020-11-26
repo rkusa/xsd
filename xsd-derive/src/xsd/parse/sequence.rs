@@ -20,12 +20,7 @@ where
     for child in node.children().namespace(NS_XSD).iter() {
         match child.name() {
             "element" => {
-                let name = ctx.get_node_name(&child.try_attribute("name")?.value(), false);
-                leaves.push(Leaf {
-                    name,
-                    definition: super::element::parse_child(child, parent, ctx)?,
-                    is_virtual: false,
-                });
+                leaves.push(super::element::parse_child(child, parent, ctx)?);
             }
             "choice" => {
                 let variants = super::choice::parse(child, parent, ctx)?;
@@ -54,10 +49,10 @@ where
                     definition: LeafDefinition {
                         content: LeafContent::Named(virtual_name),
                         restrictions: Vec::new(),
-                        min_occurs: MinOccurs::default(),
-                        max_occurs: MaxOccurs::default(),
                     },
                     is_virtual: true,
+                    min_occurs: MinOccurs::default(),
+                    max_occurs: MaxOccurs::default(),
                 });
             }
             child_name => {

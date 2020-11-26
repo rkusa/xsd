@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::ast::{LeafContent, LeafDefinition, MaxOccurs, MinOccurs, Name, Root};
+use crate::ast::{Leaf, LeafContent, LeafDefinition, MaxOccurs, MinOccurs, Name, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::{Attribute, Node};
 use crate::xsd::XsdError;
@@ -22,8 +22,6 @@ where
         Ok(Root::Leaf(LeafDefinition {
             content,
             restrictions: Vec::new(),
-            min_occurs: MinOccurs::default(),
-            max_occurs: MaxOccurs::default(),
         }))
     } else {
         node.prevent_unvisited_attributes()?;
@@ -58,10 +56,12 @@ pub fn parse_child<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
     ctx: &mut Context<'a, 'input>,
-) -> Result<LeafDefinition, XsdError>
+) -> Result<Leaf, XsdError>
 where
     'a: 'input,
 {
+    let name = ctx.get_node_name(&node.try_attribute("name")?.value(), false);
+
     let min_occurs = parse_min_occurs(node.attribute("minOccurs"))?;
     let max_occurs = parse_max_occurs(node.attribute("maxOccurs"))?;
 
@@ -73,27 +73,34 @@ where
         if let LeafContent::Named(name) = &content {
             ctx.discover_type(name);
         }
-        Ok(LeafDefinition {
-            content,
-            restrictions: Vec::new(),
+        Ok(Leaf {
+            name,
+            definition: LeafDefinition {
+                content,
+                restrictions: Vec::new(),
+            },
+            is_virtual: false,
             min_occurs,
             max_occurs,
         })
     } else {
-        // create a new virtual type
-        let name = node.try_attribute("name")?.value();
         node.prevent_unvisited_attributes()?;
 
+        // create a new virtual type
         let mut virtual_name = parent.name.to_string();
-        if !name.is_empty() {
-            virtual_name += (&name[0..1]).to_ascii_uppercase().as_str();
-            virtual_name += &name[1..];
+        if !name.name.is_empty() {
+            virtual_name += (&name.name[0..1]).to_ascii_uppercase().as_str();
+            virtual_name += &name.name[1..];
         }
-        let name = ctx.get_node_name(&virtual_name, false);
-        ctx.add_element(name.clone(), node);
-        Ok(LeafDefinition {
-            content: LeafContent::Named(name),
-            restrictions: Vec::new(),
+        let virtual_name = ctx.get_node_name(&virtual_name, false);
+        ctx.add_element(virtual_name.clone(), node);
+        Ok(Leaf {
+            name,
+            definition: LeafDefinition {
+                content: LeafContent::Named(virtual_name),
+                restrictions: Vec::new(),
+            },
+            is_virtual: false,
             min_occurs,
             max_occurs,
         })

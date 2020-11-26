@@ -1,7 +1,4 @@
-use crate::generator::escape_ident;
-
-use super::{get_xml_name, ElementDefault, Leaf, LeafDefinition, Namespaces, State};
-use inflector::Inflector;
+use super::{ElementDefault, Leaf, LeafDefinition, Namespaces, State};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -23,11 +20,7 @@ impl ElementContent {
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
-                    .map(|el| {
-                        let name_ident = escape_ident(&el.name.name.to_snake_case());
-                        let type_ident = el.definition.to_impl(state);
-                        quote! { #name_ident: #type_ident }
-                    })
+                    .map(|el| el.to_impl(state))
                     .collect::<Vec<_>>();
                 quote!(#(pub #properties,)*)
             }
@@ -46,28 +39,7 @@ impl ElementContent {
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
-                    .map(|el| {
-                        let name_ident = escape_ident(&el.name.name.to_snake_case());
-                        let name_xml = get_xml_name(&el.name, element_default.qualified);
-                        let inner = el.definition.to_xml_impl(element_default);
-                        if el.is_virtual {
-                            // We don't really want to create a wrapping element here but still
-                            // require a `start` var even though that it will not be used.
-                            // TODO: is there a better way?
-                            quote! {
-                                let start = XmlEvent::start_element(#name_xml);
-                                let val = &self.#name_ident;
-                                #inner
-                            }
-                        } else {
-                            quote! {
-                                let start = XmlEvent::start_element(#name_xml);
-                                let val = &self.#name_ident;
-                                #inner
-                                writer.write(XmlEvent::end_element())?;
-                            }
-                        }
-                    })
+                    .map(|el| el.to_xml_impl(element_default))
                     .collect::<Vec<_>>();
                 quote! {
                     writer.write(start)?;
@@ -95,28 +67,7 @@ impl ElementContent {
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
-                    .map(|el| {
-                        let name_ident = escape_ident(&el.name.name.to_snake_case());
-                        let name_xml = &el.name.name;
-                        let namespace_xml = el
-                            .name
-                            .namespace
-                            .from_xml_impl(&element_default, &namespaces);
-                        let inner = el.definition.from_xml_impl(element_default, namespaces);
-
-                        if el.is_virtual {
-                            quote! {
-                               #name_ident: #inner
-                            }
-                        } else {
-                            quote! {
-                               #name_ident: {
-                                   let node = node.child(#name_xml, #namespace_xml);
-                                   #inner
-                               }
-                            }
-                        }
-                    })
+                    .map(|el| el.from_xml_impl(element_default, namespaces))
                     .collect::<Vec<_>>();
                 quote!(#(#properties,)*)
             }
