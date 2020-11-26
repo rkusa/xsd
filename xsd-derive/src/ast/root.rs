@@ -11,7 +11,13 @@ pub enum Root {
     Leaf(LeafDefinition),
     Enum(Vec<Name>),
     Element(ElementDefinition),
-    Choice(Vec<Leaf>),
+    Choice(ChoiceDefinition),
+}
+
+#[derive(Debug, Clone)]
+pub struct ChoiceDefinition {
+    pub variants: Vec<Leaf>,
+    pub is_virtual: bool,
 }
 
 impl Root {
@@ -80,7 +86,7 @@ impl Root {
                     }
                 }
             }
-            Root::Choice(variants) => {
+            Root::Choice(ChoiceDefinition { variants, .. }) => {
                 let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
                 let variants = names.keys().map(|k| format_ident!("{}", k));
 
@@ -110,7 +116,10 @@ impl Root {
                 }
             }
             Root::Element(def) => def.to_xml_impl(element_default),
-            Root::Choice(variants) => {
+            Root::Choice(ChoiceDefinition {
+                variants,
+                is_virtual,
+            }) => {
                 let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
                 let variants = names.into_iter().map(|(variant, name)| {
                     let ident = format_ident!("{}", variant);
@@ -122,8 +131,14 @@ impl Root {
                         }
                     }
                 });
+                let start_element = if *is_virtual {
+                    quote! {}
+                } else {
+                    quote! { writer.write(start)?; }
+                };
 
                 quote! {
+                    #start_element
                     match self {
                         #(#variants,)*
                     }
@@ -159,7 +174,7 @@ impl Root {
                     #name#inner
                 }
             }
-            Root::Choice(variants) => {
+            Root::Choice(ChoiceDefinition { variants, .. }) => {
                 let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
                 let variants = names.into_iter().map(|(variant, name)| {
                     let ident = format_ident!("{}", variant);

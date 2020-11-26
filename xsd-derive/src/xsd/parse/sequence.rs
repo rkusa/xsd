@@ -1,4 +1,4 @@
-use crate::ast::{ElementContent, Leaf, LeafContent, LeafDefinition, Name, Root};
+use crate::ast::{ChoiceDefinition, ElementContent, Leaf, LeafContent, LeafDefinition, Name, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -38,7 +38,13 @@ where
 
                 let virtual_name = parent.name.to_string() + &virtual_name;
                 let virtual_name = ctx.get_node_name(&virtual_name, false);
-                ctx.add_root(virtual_name.clone(), Root::Choice(variants));
+                ctx.add_root(
+                    virtual_name.clone(),
+                    Root::Choice(ChoiceDefinition {
+                        variants,
+                        is_virtual: true,
+                    }),
+                );
 
                 leaves.push(Leaf {
                     name: leaf_name,
