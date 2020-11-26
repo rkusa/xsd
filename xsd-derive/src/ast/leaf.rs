@@ -115,8 +115,8 @@ impl Leaf {
 
                 if self.is_optional() {
                     from_vec = quote! {
-                        let val = #value;
-                        if #value.is_empty() {
+                        let val = #from_vec;
+                        if val.is_empty() {
                             None
                         } else {
                             Some(val)
