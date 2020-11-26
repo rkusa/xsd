@@ -21,6 +21,12 @@ pub enum XsdError {
         element: String,
         range: Range<usize>,
     },
+    #[error("Encountered unexpected attribute `{name}` in `{element}`")]
+    UnexpectedAttribute {
+        name: String,
+        element: String,
+        range: Range<usize>,
+    },
     #[error("Missing element `{name}` in `{parent}`")]
     MissingElement {
         name: String,
@@ -75,6 +81,7 @@ impl XsdError {
             XsdError::Node(err) => err.range(),
             XsdError::UnsupportedElement { range, .. } => Some(range),
             XsdError::UnsupportedAttributeValue { range, .. } => Some(range),
+            XsdError::UnexpectedAttribute { range, .. } => Some(range),
             XsdError::MissingElement { range, .. } => Some(range),
             // XsdError::MissingAttribute { range, .. } => Some(range),
             XsdError::MissingNamespace { range, .. } => Some(range),

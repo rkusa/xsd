@@ -9,7 +9,7 @@ fn element_nested_attribute() {
     let expected = schema::Article {
         excerpt: "Lorem Ipsum".to_string(),
         author: schema::ArticleAuthor {
-            id: 42,
+            id: Some(42),
             name: "Foobar".to_string(),
         },
     };

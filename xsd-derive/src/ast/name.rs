@@ -52,7 +52,7 @@ impl Name {
 
     pub fn from_str_impl(&self) -> TokenStream {
         quote! {
-            ::std::str::FromStr::from_str(&val)?
+            ::std::str::FromStr::from_str(val)?
         }
     }
 }

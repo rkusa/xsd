@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="setting">
+    <xs:complexType>
+      <xs:attribute name="key" type="xs:string" use="required" />
+      <xs:attribute name="value" type="xs:string" use="optional" />
+      <xs:attribute name="debug" type="xs:boolean" use="prohibited" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

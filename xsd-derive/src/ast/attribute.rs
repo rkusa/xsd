@@ -9,12 +9,16 @@ pub struct Attribute {
     pub name: Name,
     pub content: LeafContent,
     pub default: Option<String>,
+    pub is_optional: bool,
 }
 
 impl Attribute {
     pub fn to_impl(&self, state: &mut State) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
-        let type_ident = self.content.to_impl(state);
+        let mut type_ident = self.content.to_impl(state);
+        if self.is_optional {
+            type_ident = quote! { Option<#type_ident> };
+        }
         quote! { pub #name_ident: #type_ident, }
     }
 
@@ -25,14 +29,26 @@ impl Attribute {
             LeafContent::Literal(literal) => literal.to_xml_impl(element_default),
             LeafContent::Named(_) => quote! { val.as_str() },
         };
-        if let Some(default) = &self.default {
+        if self.is_optional {
+            let set_attr = if let Some(default) = &self.default {
+                quote! {
+                    if val != #default {
+                        start.attr(#name_xml, &val)
+                    } else {
+                        start
+                    }
+                }
+            } else {
+                quote! { start.attr(#name_xml, &val) }
+            };
             quote! {
-                let val = &self.#name_ident;
-                let val = #inner;
-                let start = if val == #default {
-                    start
+                let val = self.#name_ident.as_ref().map(|val| {
+                    #inner
+                });
+                let start = if let Some(val) = &val {
+                    #set_attr
                 } else {
-                    start.attr(#name_xml, &val)
+                    start
                 };
             }
         } else {
@@ -52,19 +68,28 @@ impl Attribute {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
         let inner = self.content.from_str_impl();
-        if let Some(default) = &self.default {
+        let default = if let Some(default) = &self.default {
+            quote! { .or(Some(#default)) }
+        } else {
+            quote! {}
+        };
+
+        if self.is_optional {
             quote! {
                 #name_ident: {
-                    let val = node.attribute(#name_xml).unwrap_or(#default);
-                    #inner
-                }
+                    if let Some(val) = node.attribute(#name_xml)#default {
+                        Some(#inner)
+                    } else {
+                        None
+                    }
+                },
             }
         } else {
             quote! {
                 #name_ident: {
                     let val = node.try_attribute(#name_xml)?;
                     #inner
-                }
+                },
             }
         }
     }

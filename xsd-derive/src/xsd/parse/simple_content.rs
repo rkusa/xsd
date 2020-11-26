@@ -35,7 +35,9 @@ where
     // read all attributes
     let mut attributes = Vec::new();
     while let Some(child) = children.remove("attribute", Some(NS_XSD)) {
-        attributes.push(super::attribute::parse(child, ctx)?);
+        if let Some(attr) = super::attribute::parse(child, ctx)? {
+            attributes.push(attr);
+        }
     }
 
     children.prevent_unvisited_children()?;
