@@ -89,12 +89,18 @@ impl Root {
                 }
             }
             Root::Choice(ChoiceDefinition { variants, .. }) => {
-                let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
-                let variants = names.keys().map(|k| format_ident!("{}", k));
+                // TODO: use escape_enum_names?
+                let variants = variants.iter().map(|variant| {
+                    let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
+                    let type_name = variant.definition.to_impl(state);
+                    quote! {
+                        #variant_name(#type_name)
+                    }
+                });
 
                 quote! {
                     {
-                        #(#variants(#variants),)*
+                        #(#variants,)*
                     }
                 }
             }
@@ -133,17 +139,30 @@ impl Root {
                 variants,
                 is_virtual,
             }) => {
-                let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
-                let variants = names.into_iter().map(|(variant, name)| {
-                    let ident = format_ident!("{}", variant);
-                    let name_xml = &name.name;
+                // TODO: use escape_enum_names?
+                let variants = variants.iter().map(|variant| {
+                    let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
+                    let name_xml = &variant.name.name;
+                    let inner = variant.definition.to_xml_impl(element_default);
                     quote! {
-                        Self::#ident(val) => {
+                        Self::#variant_name(val) => {
                             let mut ctx = ::xsd::Context::new(#name_xml);
-                            val.to_xml_writer(ctx, writer)?
+                            #inner
                         }
                     }
                 });
+
+                // let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
+                // let variants = names.into_iter().map(|(variant, name)| {
+                //     let ident = format_ident!("{}", variant);
+                //     let name_xml = &name.name;
+                //     quote! {
+                //         Self::#ident(val) => {
+                //             let mut ctx = ::xsd::Context::new(#name_xml);
+                //             val.to_xml_writer(ctx, writer)?
+                //         }
+                //     }
+                // });
 
                 let tn = quote! {
                     match self {
@@ -192,17 +211,44 @@ impl Root {
                 }
             }
             Root::Choice(ChoiceDefinition { variants, .. }) => {
-                let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
-                let variants = names.into_iter().map(|(variant, name)| {
-                    let ident = format_ident!("{}", variant);
-                    let name_xml = &name.name;
-                    let namespace_xml = name.namespace.from_xml_impl(&element_default, &namespaces);
-                    quote! {
-                        if let Some(node) = node.child(#name_xml, #namespace_xml) {
-                             Self::#ident(#ident::from_xml_node(&node)?)
+                // TODO: use escape_enum_names?
+                let variants = variants.iter().map(|variant| {
+                    let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
+                    let inner = variant
+                        .definition
+                        .from_xml_impl(element_default, namespaces);
+                    let name_xml = &variant.name.name;
+                    let namespace_xml = variant
+                        .name
+                        .namespace
+                        .from_xml_impl(&element_default, &namespaces);
+                    if variant.is_virtual {
+                        // TODO: instead, test if all expected elements are available?
+                        quote! {
+                            if let Ok::<_, ::xsd::decode::FromXmlError>(val) = (|| Ok({ #inner }))() {
+                                Self::#variant_name(val)
+                            }
+                        }
+                    } else {
+                        quote! {
+                            if let Some(node) = node.child(#name_xml, #namespace_xml) {
+                                Self::#variant_name(#inner)
+                            }
                         }
                     }
                 });
+
+                // let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
+                // let variants = names.into_iter().map(|(variant, name)| {
+                //     let ident = format_ident!("{}", variant);
+                //     let name_xml = &name.name;
+                //     let namespace_xml = name.namespace.from_xml_impl(&element_default, &namespaces);
+                //     quote! {
+                //         if let Some(node) = node.child(#name_xml, #namespace_xml) {
+                //              Self::#ident(#ident::from_xml_node(&node)?)
+                //         }
+                //     }
+                // });
 
                 quote! {
                     #(#variants else )* {

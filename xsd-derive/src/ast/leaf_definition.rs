@@ -1,6 +1,5 @@
 use super::{ElementDefault, LeafContent, Namespaces, State};
 use proc_macro2::TokenStream;
-use quote::quote;
 
 #[derive(Debug, Clone)]
 pub struct LeafDefinition {
@@ -36,12 +35,6 @@ impl LeafDefinition {
         element_default: &ElementDefault,
         namespaces: &'a Namespaces<'a>,
     ) -> TokenStream {
-        let inner = self.content.from_xml_impl(element_default, namespaces);
-        quote! {
-            {
-                let val = node.text()?;
-                #inner
-            }
-        }
+        self.content.from_xml_impl(element_default, namespaces)
     }
 }

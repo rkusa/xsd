@@ -26,8 +26,9 @@ where
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
                 let variants = super::choice::parse(child, parent, ctx)?;
-                let leaf_name = super::derive_virtual_name(variants.iter().map(|v| &v.name), ctx);
-                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx);
+                let leaf_name =
+                    super::derive_virtual_name(variants.iter().map(|v| &v.name), ctx, true);
+                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
 
                 ctx.add_root(
                     root_name.clone(),
@@ -52,8 +53,9 @@ where
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
                 let leaves = parse(child, parent, ctx)?;
-                let leaf_name = super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx);
-                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx);
+                let leaf_name =
+                    super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
+                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
 
                 ctx.add_root(
                     root_name.clone(),

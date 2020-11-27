@@ -35,7 +35,15 @@ impl LeafContent {
         namespaces: &'a Namespaces<'a>,
     ) -> TokenStream {
         match self {
-            LeafContent::Literal(literal) => literal.from_str_impl(),
+            LeafContent::Literal(literal) => {
+                let inner = literal.from_str_impl();
+                quote! {
+                    {
+                        let val = node.text()?;
+                        #inner
+                    }
+                }
+            }
             LeafContent::Named(name) => name.from_xml_impl(element_default, namespaces),
         }
     }

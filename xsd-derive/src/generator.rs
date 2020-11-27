@@ -36,7 +36,7 @@ pub fn generate(
 
     let mut state = ();
     for (name, el) in schema.elements() {
-        // eprintln!("{:#?}", el);
+        // eprintln!("{:#?} {:#?}", name, el);
 
         // TODO: handle duplicates with different prefixes
         let name_ident = escape_ident(&name.name.to_pascal_case());
