@@ -1,5 +1,6 @@
 use super::{ElementDefault, LeafContent, Namespaces, State};
 use proc_macro2::TokenStream;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone)]
 pub struct LeafDefinition {
@@ -9,17 +10,16 @@ pub struct LeafDefinition {
     // pub fixed: Option<String>,
 }
 
-pub type Restriction = ();
-// #[derive(Debug, PartialEq, Clone)]
-// pub enum Restriction {
-//     // MinLength(usize),
-//     // MaxLength(usize),
-//     // Pattern(String),
-//     // MinInclusive(Decimal),
-//     // MaxInclusive(Decimal),
-//     // FractionDigits(usize),
-//     // TotalDigits(usize),
-// }
+#[derive(Debug, PartialEq, Clone)]
+pub enum Restriction {
+    MinLength(usize),
+    MaxLength(usize),
+    Pattern(String),
+    MinInclusive(Decimal),
+    MaxInclusive(Decimal),
+    FractionDigits(usize),
+    TotalDigits(usize),
+}
 
 impl LeafDefinition {
     pub fn to_impl(&self, state: &mut State) -> TokenStream {

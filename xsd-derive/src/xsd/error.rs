@@ -48,11 +48,11 @@ pub enum XsdError {
         err: std::num::ParseIntError,
         range: Range<usize>,
     },
-    // #[error("Failed to parse decimal value")]
-    // ParseDecimal {
-    //     err: rust_decimal::Error,
-    //     range: Range<usize>,
-    // },
+    #[error("Failed to parse decimal value")]
+    ParseDecimal {
+        err: rust_decimal::Error,
+        range: Range<usize>,
+    },
     #[error("Unsupported XSD type {name}")]
     UnsupportedType { name: String, range: Range<usize> },
     #[error("Encountered circular type while parsing {name}")]
@@ -85,7 +85,7 @@ impl XsdError {
             XsdError::MissingNamespace { range, .. } => Some(range),
             // XsdError::MultipleTypes { range, .. } => Some(range),
             XsdError::ParseInt { range, .. } => Some(range),
-            // XsdError::ParseDecimal { range, .. } => Some(range),
+            XsdError::ParseDecimal { range, .. } => Some(range),
             XsdError::UnsupportedType { range, .. } => Some(range),
             XsdError::CircularType { range, .. } => Some(range),
         }

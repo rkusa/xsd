@@ -1,5 +1,9 @@
+use std::str::FromStr;
+
+use rust_decimal::Decimal;
+
 use crate::ast::Namespace::None;
-use crate::ast::{LeafContent, LeafDefinition, Name, Root};
+use crate::ast::{LeafContent, LeafDefinition, Name, Restriction, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -32,7 +36,7 @@ where
 
     children.prevent_unvisited_children()?;
 
-    let restrictions = Vec::new();
+    let mut restrictions = Vec::new();
     let mut enumerations = Vec::new();
 
     for child in restriction.children().namespace(NS_XSD).iter() {
@@ -42,6 +46,59 @@ where
                     child.try_attribute("value")?.value().into_owned(),
                     None,
                 ));
+            }
+            "minLength" => {
+                let attr = child.try_attribute("value")?;
+                let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
+                    err,
+                    range: attr.range(),
+                })?;
+                restrictions.push(Restriction::MinLength(value));
+            }
+            "maxLength" => {
+                let attr = child.try_attribute("value")?;
+                let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
+                    err,
+                    range: attr.range(),
+                })?;
+                restrictions.push(Restriction::MaxLength(value));
+            }
+            "pattern" => restrictions.push(Restriction::Pattern(
+                child.try_attribute("value")?.value().into_owned(),
+            )),
+            "minInclusive" => {
+                let attr = child.try_attribute("value")?;
+                let value =
+                    Decimal::from_str(&attr.value()).map_err(|err| XsdError::ParseDecimal {
+                        err,
+                        range: attr.range(),
+                    })?;
+                restrictions.push(Restriction::MinInclusive(value));
+            }
+            "maxInclusive" => {
+                let attr = child.try_attribute("value")?;
+                let value =
+                    Decimal::from_str(&attr.value()).map_err(|err| XsdError::ParseDecimal {
+                        err,
+                        range: attr.range(),
+                    })?;
+                restrictions.push(Restriction::MaxInclusive(value));
+            }
+            "fractionDigits" => {
+                let attr = child.try_attribute("value")?;
+                let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
+                    err,
+                    range: attr.range(),
+                })?;
+                restrictions.push(Restriction::FractionDigits(value));
+            }
+            "totalDigits" => {
+                let attr = child.try_attribute("value")?;
+                let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
+                    err,
+                    range: attr.range(),
+                })?;
+                restrictions.push(Restriction::TotalDigits(value));
             }
             child_name => {
                 return Err(XsdError::UnsupportedElement {
