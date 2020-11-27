@@ -42,7 +42,6 @@ impl ElementContent {
                     .map(|el| el.to_xml_impl(element_default))
                     .collect::<Vec<_>>();
                 quote! {
-                    writer.write(start)?;
                     #(#properties)*
                 }
             }

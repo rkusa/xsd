@@ -49,5 +49,6 @@ where
             content,
             restrictions: Vec::new(),
         })),
+        is_virtual: false,
     })
 }

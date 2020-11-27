@@ -7,6 +7,7 @@ use quote::TokenStreamExt;
 pub struct ElementDefinition {
     pub attributes: Vec<Attribute>,
     pub content: Option<ElementContent>,
+    pub is_virtual: bool,
 }
 
 impl ElementDefinition {
@@ -27,6 +28,11 @@ impl ElementDefinition {
             ts.append_all(attr.to_xml_impl(element_default));
         }
         if let Some(content) = &self.content {
+            // TODO: rework when element starts are written to make it easier to understand and
+            // extend ...
+            if !self.is_virtual && matches!(content, ElementContent::Leaves(_)) {
+                ts.append_all(quote! { writer.write(start)?; });
+            }
             ts.append_all(content.to_xml_impl(element_default));
         } else {
             ts.append_all(quote! {

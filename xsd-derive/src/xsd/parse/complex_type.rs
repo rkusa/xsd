@@ -1,4 +1,4 @@
-use crate::ast::{ChoiceDefinition, ElementDefinition, Name, Root};
+use crate::ast::{ChoiceDefinition, ElementContent, ElementDefinition, Name, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -35,7 +35,9 @@ where
 
     let content = if let Some(child) = children.remove("sequence", Some(NS_XSD)) {
         // TODO: or all, choice
-        Some(super::sequence::parse(child, parent, ctx)?)
+        Some(ElementContent::Leaves(super::sequence::parse(
+            child, parent, ctx,
+        )?))
     } else if let Some(child) = children.remove("choice", Some(NS_XSD)) {
         let variants = super::choice::parse(child, parent, ctx)?;
         return Ok(Root::Choice(ChoiceDefinition {
@@ -59,5 +61,6 @@ where
     Ok(Root::Element(ElementDefinition {
         attributes,
         content,
+        is_virtual: false,
     }))
 }
