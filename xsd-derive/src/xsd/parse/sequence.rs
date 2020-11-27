@@ -1,10 +1,11 @@
 use crate::ast::{
-    ChoiceDefinition, ElementContent, Leaf, LeafContent, LeafDefinition, MaxOccurs, MinOccurs,
-    Name, Root,
+    ChoiceDefinition, ElementContent, Leaf, LeafContent, LeafDefinition, MaxOccurs, Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
+
+use super::element::parse_min_occurs;
 
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
@@ -23,6 +24,8 @@ where
                 leaves.push(super::element::parse_child(child, parent, ctx)?);
             }
             "choice" => {
+                let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
+
                 let variants = super::choice::parse(child, parent, ctx)?;
                 let mut virtual_name = String::new();
                 for v in &variants {
@@ -51,7 +54,7 @@ where
                         restrictions: Vec::new(),
                     },
                     is_virtual: true,
-                    min_occurs: MinOccurs::default(),
+                    min_occurs,
                     max_occurs: MaxOccurs::default(),
                 });
             }

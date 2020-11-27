@@ -101,7 +101,18 @@ impl Leaf {
             .from_xml_impl(&element_default, &namespaces);
         let mut value = self.definition.from_xml_impl(element_default, namespaces);
 
-        if !self.is_virtual {
+        if self.is_virtual {
+            if self.is_optional() {
+                value = quote! {
+                    let closure = || Ok({ #value });
+                    match closure() {
+                        Ok(val) => Some(val),
+                        Err(::xsd::decode::FromXmlError::MissingVariant) => None,
+                        Err(err) => return Err(err)
+                    }
+                };
+            }
+        } else {
             value = if self.is_vec() {
                 let mut from_vec = quote! {
                     node
