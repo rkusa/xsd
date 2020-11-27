@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="Role">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="User"/>
+      <xs:enumeration value="Admin"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="user">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="role">
+          <xs:complexType>
+            <xs:simpleContent>
+              <xs:extension base="Role">
+                <xs:attribute name="inherited" type="xs:boolean" use="required" />
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

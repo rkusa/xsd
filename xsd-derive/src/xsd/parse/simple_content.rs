@@ -18,13 +18,8 @@ where
 
     let attr = extension.try_attribute("base")?;
     let content = ctx.get_type_name(&attr)?;
-    if matches!(content, LeafContent::Named(_)) {
-        return Err(XsdError::UnsupportedAttributeValue {
-            name: "base".to_string(),
-            value: attr.value().to_string(),
-            element: "extension".to_string(),
-            range: attr.range(),
-        });
+    if let LeafContent::Named(name) = &content {
+        ctx.discover_type(name);
     }
 
     let mut children = extension.children().namespace(NS_XSD).collect();
