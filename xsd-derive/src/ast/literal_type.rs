@@ -53,7 +53,7 @@ impl LiteralType {
             Int32 => quote! { i32 },
             Decimal => quote! { rust_decimal::Decimal },
             Float32 => quote! { f32 },
-            Any => quote! { () },
+            Any => quote! { String },
 
             // TODO: use proper types for the following
             DateTime => quote! { String },
