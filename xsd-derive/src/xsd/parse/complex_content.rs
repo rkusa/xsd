@@ -18,13 +18,16 @@ where
 
     let attr = extension.try_attribute("base")?;
     let content = ctx.get_type_name(&attr)?;
-    if matches!(content, LeafContent::Named(_)) {
-        return Err(XsdError::UnsupportedAttributeValue {
-            name: "base".to_string(),
-            value: attr.value().to_string(),
-            element: "extension".to_string(),
-            range: attr.range(),
-        });
+    match &content {
+        LeafContent::Literal(_) => {
+            return Err(XsdError::UnsupportedAttributeValue {
+                name: "base".to_string(),
+                value: attr.value().to_string(),
+                element: "extension".to_string(),
+                range: attr.range(),
+            })
+        }
+        LeafContent::Named(name) => ctx.discover_type(name),
     }
 
     let mut children = extension.children().namespace(NS_XSD).collect();
@@ -39,6 +42,7 @@ where
 
     children.prevent_unvisited_children()?;
 
+    // TODO: merge with extension instead of having it as `value` property?
     Ok(ElementDefinition {
         attributes,
         content: Some(ElementContent::Leaf(LeafDefinition {

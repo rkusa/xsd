@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:complexType name="User">
+		<xs:sequence>
+			<xs:element name="id" type="xs:long" />
+			<xs:element name="name" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+	<xs:simpleType name="Roles">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="USER"/>
+			<xs:enumeration value="ADMIN"/>
+		</xs:restriction>
+	</xs:simpleType>
+  <xs:element name="Account">
+    <xs:complexType mixed="false">
+      <xs:complexContent>
+        <xs:extension base="User">
+          <xs:attribute name="role" type="Roles" use="required" />
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

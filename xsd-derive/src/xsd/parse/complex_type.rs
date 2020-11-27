@@ -29,6 +29,9 @@ where
     if let Some(child) = children.remove("simpleContent", Some(NS_XSD)) {
         return Ok(Root::Element(super::simple_content::parse(child, ctx)?));
     }
+    if let Some(child) = children.remove("complexContent", Some(NS_XSD)) {
+        return Ok(Root::Element(super::complex_content::parse(child, ctx)?));
+    }
 
     let content = if let Some(child) = children.remove("sequence", Some(NS_XSD)) {
         // TODO: or all, choice
