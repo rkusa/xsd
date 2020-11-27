@@ -72,15 +72,6 @@ where
         }
     }
 
-    pub fn discover_simple_type(&mut self, name: &Name) -> bool {
-        if let Some(node) = self.simple_types.remove(name) {
-            self.elements.insert(name.clone(), node);
-            true
-        } else {
-            false
-        }
-    }
-
     pub fn remove_elements(&mut self) -> impl Iterator<Item = (Name, Lazy<'a, 'input>)> {
         let elements = std::mem::take(&mut self.elements);
         elements.into_iter()

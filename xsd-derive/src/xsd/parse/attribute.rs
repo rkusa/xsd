@@ -24,12 +24,7 @@ where
     let type_attr = node.try_attribute("type")?;
     let content = ctx.get_type_name(&type_attr)?;
     if let LeafContent::Named(name) = &content {
-        if !ctx.discover_simple_type(&name) {
-            return Err(XsdError::MissingSimpleType {
-                name: name.name.to_string(),
-                range: type_attr.range(),
-            });
-        }
+        ctx.discover_type(&name);
     }
 
     let default = node.attribute("default").map(|a| a.value().to_string());
