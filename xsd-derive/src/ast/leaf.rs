@@ -2,7 +2,7 @@ use super::{get_xml_name, ElementDefault, LeafContent, LeafDefinition, Name, Nam
 use crate::generator::escape_ident;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
-use quote::{quote, TokenStreamExt};
+use quote::{format_ident, quote, TokenStreamExt};
 
 #[derive(Debug, Clone)]
 pub struct Leaf {
@@ -109,20 +109,25 @@ impl Leaf {
     ) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
-        let namespace_xml = self
-            .name
-            .namespace
-            .from_xml_impl(&element_default, &namespaces);
+        let namespace_xml = self.name.namespace.to_quote(&element_default);
         let mut value = self.definition.from_xml_impl(element_default, namespaces);
 
         if self.is_virtual {
             if self.is_optional() {
+                let name = if let LeafContent::Named(name) = &self.definition.content {
+                    name
+                } else {
+                    // unreachable  ...
+                    // TODO: reflect that in the type?
+                    unreachable!()
+                };
+
+                let first_name = format_ident!("{}", name.name.to_pascal_case());
                 value = quote! {
-                    let closure = || Ok({ #value });
-                    match closure() {
-                        Ok(val) => Some(val),
-                        Err(::xsd::decode::FromXmlError::MissingVariant) => None,
-                        Err(err) => return Err(err)
+                    if #first_name::lookahead(node) {
+                        Some({ #value })
+                    } else {
+                        None
                     }
                 };
             }

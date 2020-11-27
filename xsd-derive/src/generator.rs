@@ -101,7 +101,7 @@ pub fn generate(
         });
 
         let name_xml = &name.name;
-        let namespace_xml = name.namespace.from_xml_impl(&element_default, &namespaces);
+        let namespace_xml = name.namespace.to_quote(&element_default);
         let from_xml = el.from_xml_impl(&name_ident, &element_default, &namespaces);
 
         structs.append_all(quote! {
@@ -114,6 +114,16 @@ pub fn generate(
 
                 fn from_xml_node(node: &::xsd::decode::Node) -> Result<Self, ::xsd::decode::FromXmlError> {
                     Ok(#from_xml)
+                }
+            }
+        });
+
+        let lookahead = el.lookahead_impl(&element_default);
+
+        structs.append_all(quote! {
+            impl #name_ident {
+                fn lookahead(node: &::xsd::decode::Node) -> bool {
+                    #lookahead
                 }
             }
         });

@@ -58,11 +58,7 @@ impl Name {
 }
 
 impl Namespace {
-    pub fn from_xml_impl<'a>(
-        &self,
-        element_default: &ElementDefault,
-        _namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn to_quote<'a>(&self, element_default: &ElementDefault) -> TokenStream {
         let namespace = match self {
             Namespace::None => None,
             Namespace::Target => element_default.target_namespace.as_deref(),

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use super::{
-    ElementDefault, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name, Namespaces, State,
+    ElementContent, ElementDefault, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name,
+    Namespaces, State,
 };
 use inflector::Inflector;
 use proc_macro2::TokenStream;
@@ -206,16 +207,19 @@ impl Root {
                         .definition
                         .from_xml_impl(element_default, namespaces);
                     let name_xml = &variant.name.name;
-                    let namespace_xml = variant
-                        .name
-                        .namespace
-                        .from_xml_impl(&element_default, &namespaces);
+                    let namespace_xml = variant.name.namespace.to_quote(&element_default);
                     if variant.is_virtual {
-                        // TODO: instead, test if all expected elements are available?
-                        quote! {
-                            if let Ok::<_, ::xsd::decode::FromXmlError>(val) = (|| Ok({ #inner }))() {
-                                Self::#variant_name(val)
+                        if let LeafContent::Named(name) = &variant.definition.content {
+                            let first_name = format_ident!("{}", name.name.to_pascal_case());
+                            quote! {
+                                if #first_name::lookahead(node) {
+                                    Self::#variant_name(#inner)
+                                }
                             }
+                        } else {
+                            // unreachable  ...
+                            // TODO: reflect that in the type?
+                            unreachable!()
                         }
                     } else {
                         quote! {
@@ -230,6 +234,57 @@ impl Root {
                     #(#variants else )* {
                         return Err(::xsd::decode::FromXmlError::MissingVariant)
                     }
+                }
+            }
+        }
+    }
+
+    pub fn lookahead_impl(&self, element_default: &ElementDefault) -> TokenStream {
+        match self {
+            Root::Leaf(_) => {
+                quote! {
+                    true
+                }
+            }
+            Root::Enum(_) => {
+                quote! {
+                    true
+                }
+            }
+            Root::Element(def) => {
+                if let ElementDefinition {
+                    content: Some(ElementContent::Leaves(leaves)),
+                    ..
+                } = &def
+                {
+                    if let Some(first) = leaves.first() {
+                        let name_xml = &first.name.name;
+                        let namespace_xml = first.name.namespace.to_quote(&element_default);
+                        quote! {
+                            node.peek_child(#name_xml, #namespace_xml)
+                        }
+                    } else {
+                        quote! {
+                            false
+                        }
+                    }
+                } else {
+                    quote! {
+                        false
+                    }
+                }
+            }
+            Root::Choice(ChoiceDefinition { variants, .. }) => {
+                let checks = variants.iter().map(|variant| {
+                    let name_xml = &variant.name.name;
+                    let namespace_xml = variant.name.namespace.to_quote(&element_default);
+                    quote! {
+                        node.peek_child(#name_xml, #namespace_xml)
+                    }
+                });
+
+                quote! {
+                    false #(|| #checks)*
                 }
             }
         }

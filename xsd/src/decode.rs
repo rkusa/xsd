@@ -75,6 +75,18 @@ impl<'a> Node<'a> {
         }
     }
 
+    pub fn peek_child(&self, name: &str, namespace: Option<&str>) -> bool {
+        let mut children = self.children.borrow_mut();
+        if children.next.is_none() {
+            children.next = children.children.next();
+        }
+        if let Some(next) = &children.next {
+            let tag_name = next.tag_name();
+            return tag_name.name() == name && tag_name.namespace() == namespace;
+        }
+        false
+    }
+
     pub fn next_child(&self, name: &str, namespace: Option<&str>) -> Option<Node<'_>> {
         let mut children = self.children.borrow_mut();
         if let Some(next) = children.next.take().or_else(|| children.children.next()) {
