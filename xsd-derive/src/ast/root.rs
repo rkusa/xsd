@@ -152,18 +152,6 @@ impl Root {
                     }
                 });
 
-                // let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
-                // let variants = names.into_iter().map(|(variant, name)| {
-                //     let ident = format_ident!("{}", variant);
-                //     let name_xml = &name.name;
-                //     quote! {
-                //         Self::#ident(val) => {
-                //             let mut ctx = ::xsd::Context::new(#name_xml);
-                //             val.to_xml_writer(ctx, writer)?
-                //         }
-                //     }
-                // });
-
                 let tn = quote! {
                     match self {
                         #(#variants,)*
@@ -231,24 +219,12 @@ impl Root {
                         }
                     } else {
                         quote! {
-                            if let Some(node) = node.child(#name_xml, #namespace_xml) {
+                            if let Some(node) = node.next_child(#name_xml, #namespace_xml) {
                                 Self::#variant_name(#inner)
                             }
                         }
                     }
                 });
-
-                // let names = escape_enum_names(variants.iter().map(|v| v.name.clone()).collect());
-                // let variants = names.into_iter().map(|(variant, name)| {
-                //     let ident = format_ident!("{}", variant);
-                //     let name_xml = &name.name;
-                //     let namespace_xml = name.namespace.from_xml_impl(&element_default, &namespaces);
-                //     quote! {
-                //         if let Some(node) = node.child(#name_xml, #namespace_xml) {
-                //              Self::#ident(#ident::from_xml_node(&node)?)
-                //         }
-                //     }
-                // });
 
                 quote! {
                     #(#variants else )* {

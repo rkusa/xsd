@@ -129,13 +129,14 @@ impl Leaf {
         } else {
             value = if self.is_vec() {
                 let mut from_vec = quote! {
-                    node
-                        .children(#name_xml, #namespace_xml)
-                        .map(|node| {
+                    {
+                        let mut vec = Vec::new();
+                        while let Some(node) = node.next_child(#name_xml, #namespace_xml) {
                             let val = node.text()?;
-                            Ok(#value)
-                        })
-                        .collect::<Result<Vec<_>, ::xsd::decode::FromXmlError>>()?
+                            vec.push(#value);
+                        }
+                        vec
+                    }
                 };
 
                 if self.is_optional() {
@@ -152,7 +153,7 @@ impl Leaf {
                 from_vec
             } else if self.is_optional() {
                 quote! {
-                    if let Some(node) = node.child(#name_xml, #namespace_xml) {
+                    if let Some(node) = node.next_child(#name_xml, #namespace_xml) {
                         Some(#value)
                     } else {
                         None
@@ -160,7 +161,7 @@ impl Leaf {
                 }
             } else {
                 quote! {
-                    let node = node.try_child(#name_xml, #namespace_xml)?;
+                    let node = node.try_next_child(#name_xml, #namespace_xml)?;
                     #value
                 }
             };
