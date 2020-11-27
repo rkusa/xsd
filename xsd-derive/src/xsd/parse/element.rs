@@ -65,6 +65,10 @@ where
     let min_occurs = parse_min_occurs(node.attribute("minOccurs"))?;
     let max_occurs = parse_max_occurs(node.attribute("maxOccurs"))?;
 
+    // TODO: handle `default` similar to attributes?
+    // mark `default` attribute as visited
+    node.attribute("default");
+
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
         node.prevent_unvisited_attributes()?;
