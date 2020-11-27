@@ -6,6 +6,8 @@ use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
 
+use super::element::parse_min_occurs;
+
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
@@ -38,6 +40,8 @@ where
     let mut virtual_leaves = Vec::new();
 
     if let Some(child) = children.remove("sequence", Some(NS_XSD)) {
+        let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
+
         let leaves = super::sequence::parse(child, parent, ctx)?;
         let leaf_name = super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx);
         let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx);
@@ -58,7 +62,7 @@ where
                 restrictions: Vec::new(),
             },
             is_virtual: true,
-            min_occurs: MinOccurs::default(),
+            min_occurs,
             max_occurs: MaxOccurs::default(),
         });
     }

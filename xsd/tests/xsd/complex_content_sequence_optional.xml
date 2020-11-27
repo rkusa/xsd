@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Account>
+  <id>42</id>
+  <name>Foobar</name>
+  <role>ADMIN</role>
+  <enabled>true</enabled>
+</Account>
