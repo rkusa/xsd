@@ -22,6 +22,15 @@ pub enum MaxOccurs {
     Unbounded,
 }
 
+impl MaxOccurs {
+    pub fn is_vec(&self) -> bool {
+        match self {
+            MaxOccurs::Number(n) => *n > 1,
+            MaxOccurs::Unbounded => true,
+        }
+    }
+}
+
 impl Leaf {
     pub fn is_optional(&self) -> bool {
         self.min_occurs == MinOccurs(0)
@@ -125,9 +134,28 @@ impl Leaf {
                 let first_name = format_ident!("{}", name.name.to_pascal_case());
                 value = quote! {
                     if #first_name::lookahead(node) {
-                        Some({ #value })
+                        Some(#value)
                     } else {
                         None
+                    }
+                };
+            } else if self.is_vec() {
+                let name = if let LeafContent::Named(name) = &self.definition.content {
+                    name
+                } else {
+                    // unreachable  ...
+                    // TODO: reflect that in the type?
+                    unreachable!()
+                };
+
+                let first_name = format_ident!("{}", name.name.to_pascal_case());
+                value = quote! {
+                    {
+                        let mut vec = Vec::new();
+                        while #first_name::lookahead(node) {
+                            vec.push(#value);
+                        }
+                        vec
                     }
                 };
             }
