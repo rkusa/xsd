@@ -149,6 +149,7 @@ fn literal_from_str(literal: &str) -> Option<LiteralType> {
         "dateTime" => LiteralType::DateTime,
         "duration" => LiteralType::Duration,
         "base64Binary" => LiteralType::Base64Binary,
+        "hexBinary" => LiteralType::HexBinary,
         "any" => LiteralType::Any,
         "anyType" => LiteralType::Any,
         _ => return None,

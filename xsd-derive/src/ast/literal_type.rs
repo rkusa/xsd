@@ -16,6 +16,7 @@ pub enum LiteralType {
     Date,
     Duration,
     Base64Binary,
+    HexBinary,
     Any,
 }
 
@@ -35,6 +36,7 @@ impl LiteralType {
             Date => "date",
             Duration => "duration",
             Base64Binary => "base64Binary",
+            HexBinary => "hexBinary",
             Any => "any",
         }
     }
@@ -51,12 +53,15 @@ impl LiteralType {
             Int32 => quote! { i32 },
             Decimal => quote! { rust_decimal::Decimal },
             Float32 => quote! { f32 },
+            Any => quote! { () },
+
+            // TODO: use proper types for the following
             DateTime => quote! { String },
             Time => quote! { String },
             Date => quote! { String },
             Duration => quote! { String },
             Base64Binary => quote! { String },
-            Any => quote! { () },
+            HexBinary => quote! { String },
         }
     }
 
