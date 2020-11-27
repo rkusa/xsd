@@ -11,7 +11,16 @@ pub fn parse<'a, 'input>(
 where
     'a: 'input,
 {
+    if node.attribute("mixed").map(|a| a.value()).as_deref() == Some("true") {
+        return Err(XsdError::UnsupportedAttributeValue {
+            name: "mixed".to_string(),
+            value: "true".to_string(),
+            element: node.name().to_string(),
+            range: node.range(),
+        });
+    }
     node.prevent_unvisited_attributes()?;
+
     let mut children = node.children().namespace(NS_XSD).collect();
     // TODO: (annotation?,(simpleContent|complexContent|)
     // TODO: annotation
