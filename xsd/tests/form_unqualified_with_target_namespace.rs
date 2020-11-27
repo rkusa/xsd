@@ -8,7 +8,7 @@ fn form_unqualified_with_target_namespace() {
     let xml = include_str!("./xsd/form_unqualified_with_target_namespace.xml");
     let expected = schema::Article {
         excerpt: "Lorem Ipsum".to_string(),
-        author: schema::ArticleAuthor {
+        author: schema::ArticleAuthorData {
             name: "Foobar".to_string(),
         },
     };

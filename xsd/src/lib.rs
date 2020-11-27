@@ -1,5 +1,8 @@
 pub mod decode;
 
+pub use xml;
+pub use xsd_derive::all;
+
 use std::borrow::Cow;
 use std::mem;
 
@@ -7,7 +10,6 @@ use xml::attribute::Attribute;
 use xml::name::Name;
 use xml::namespace::{Namespace, NS_NO_PREFIX};
 use xml::writer::events::XmlEvent;
-pub use xsd_derive::all;
 
 pub enum Context<'a, 'b> {
     Virtual(&'b mut ContextInner<'a>),

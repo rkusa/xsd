@@ -58,7 +58,7 @@ impl Name {
 }
 
 impl Namespace {
-    pub fn to_quote<'a>(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_quote(&self, element_default: &ElementDefault) -> TokenStream {
         let namespace = match self {
             Namespace::None => None,
             Namespace::Target => element_default.target_namespace.as_deref(),

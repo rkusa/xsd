@@ -10,7 +10,7 @@ fn complex_type_choice() {
         created_by: schema::Author::User(schema::User {
             name: "Foobar".to_string(),
         }),
-        posted_by: schema::ArticlePostedBy::Bot(schema::Bot {
+        posted_by: schema::ArticlePostedByData::Bot(schema::Bot {
             handle: "Foobot".to_string(),
         }),
     };

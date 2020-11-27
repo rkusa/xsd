@@ -7,7 +7,7 @@ use pretty_assertions::assert_eq;
 fn simple_content_custom_base() {
     let xml = include_str!("./xsd/simple_content_custom_base.xml");
     let expected = schema::User {
-        role: schema::UserRole {
+        role: schema::UserRoleData {
             value: schema::Role::User,
             inherited: true,
         },

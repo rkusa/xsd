@@ -91,12 +91,11 @@ where
         node.prevent_unvisited_attributes()?;
 
         // create a new virtual type
-        let mut virtual_name = parent.name.to_string();
-        if !name.name.is_empty() {
-            virtual_name += (&name.name[0..1]).to_ascii_uppercase().as_str();
-            virtual_name += &name.name[1..];
-        }
-        let virtual_name = ctx.get_node_name(&virtual_name, false);
+        let virtual_name = super::derive_virtual_name(
+            vec![parent, &name, &ctx.get_node_name("Data", false)],
+            ctx,
+            false,
+        );
         ctx.add_element(virtual_name.clone(), node);
         Ok(Leaf {
             name,

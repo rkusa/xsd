@@ -8,7 +8,7 @@ fn form_qualified() {
     let xml = include_str!("./xsd/form_qualified.xml");
     let expected = schema::Article {
         excerpt: "Lorem Ipsum".to_string(),
-        author: schema::ArticleAuthor {
+        author: schema::ArticleAuthorData {
             name: "Foobar".to_string(),
         },
     };

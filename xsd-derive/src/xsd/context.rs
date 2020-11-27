@@ -43,15 +43,19 @@ where
     }
 
     pub fn add_simple_type(&mut self, name: Name, node: Node<'a, 'input>) {
-        self.simple_types.insert(name, Lazy::new(node));
+        let parent_name = name.name.to_string();
+        self.simple_types.insert(name, Lazy::new(node, parent_name));
     }
 
     pub fn add_complex_type(&mut self, name: Name, node: Node<'a, 'input>) {
-        self.complex_types.insert(name, Lazy::new(node));
+        let parent_name = name.name.to_string();
+        self.complex_types
+            .insert(name, Lazy::new(node, parent_name));
     }
 
     pub fn add_element(&mut self, name: Name, node: Node<'a, 'input>) {
-        self.elements.insert(name, Lazy::new(node));
+        let parent_name = name.name.to_string();
+        self.elements.insert(name, Lazy::new(node, parent_name));
     }
 
     pub fn add_root(&mut self, name: Name, root: Root) {

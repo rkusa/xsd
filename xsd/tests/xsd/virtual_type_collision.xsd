@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="path">
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element name="point">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="x" type="xs:float"/>
+						<xs:element name="y" type="xs:float"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+  <xs:element name="trace" type="path" />
+</xs:schema>

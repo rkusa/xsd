@@ -8,7 +8,7 @@ fn element_nested() {
     let xml = include_str!("./xsd/element_nested.xml");
     let expected = schema::Article {
         excerpt: "Lorem Ipsum".to_string(),
-        author: schema::ArticleAuthor {
+        author: schema::ArticleAuthorData {
             name: "Foobar".to_string(),
         },
     };

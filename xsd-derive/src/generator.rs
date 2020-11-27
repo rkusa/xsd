@@ -66,16 +66,16 @@ pub fn generate(
 
         structs.append_all(quote! {
             impl #name_ident {
-                pub fn to_xml(&self) -> Result<Vec<u8>, ::xml::writer::Error> {
-                    use ::xml::writer::events::XmlEvent;
+                pub fn to_xml(&self) -> Result<Vec<u8>, ::xsd::xml::writer::Error> {
+                    use ::xsd::xml::writer::events::XmlEvent;
 
                     let mut body = Vec::new();
-                    let mut writer = ::xml::writer::EmitterConfig::new()
+                    let mut writer = ::xsd::xml::writer::EmitterConfig::new()
                         .perform_indent(true)
                         .create_writer(&mut body);
 
                     writer.write(XmlEvent::StartDocument {
-                        version: ::xml::common::XmlVersion::Version10,
+                        version: ::xsd::xml::common::XmlVersion::Version10,
                         encoding: Some("UTF-8"),
                         standalone: None,
                     })?;
@@ -88,9 +88,9 @@ pub fn generate(
                 fn to_xml_writer<'a, 'b, W: ::std::io::Write>(
                     &'a self,
                     mut ctx: ::xsd::Context<'a, 'b>,
-                    writer: &mut ::xml::writer::EventWriter<W>,
-                ) -> Result<(), ::xml::writer::Error> {
-                    use ::xml::writer::events::XmlEvent;
+                    writer: &mut ::xsd::xml::writer::EventWriter<W>,
+                ) -> Result<(), ::xsd::xml::writer::Error> {
+                    use ::xsd::xml::writer::events::XmlEvent;
 
                     #(ctx#element_ns;)*
                     #to_xml

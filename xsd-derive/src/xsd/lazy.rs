@@ -8,6 +8,7 @@ use crate::ast::{Name, Namespace, Root};
 
 pub struct Lazy<'a, 'input> {
     name: String,
+    parent_name: String,
     range: Range<usize>,
     content: Cell<Content<'a, 'input>>,
 }
@@ -28,9 +29,10 @@ impl<'a, 'input> Lazy<'a, 'input>
 where
     'a: 'input,
 {
-    pub fn new(node: Node<'a, 'input>) -> Self {
+    pub fn new(node: Node<'a, 'input>, parent_name: String) -> Self {
         Lazy {
             name: node.name().to_string(),
+            parent_name,
             range: node.range(),
             content: Cell::new(Content::Node(node)),
         }
@@ -62,9 +64,11 @@ where
     ) -> Result<Root, XsdError> {
         match node.name() {
             "element" => super::parse::element::parse_root(node, ctx),
-            "complexType" => {
-                super::parse::complex_type::parse(node, &Name::new("", Namespace::None), ctx)
-            }
+            "complexType" => super::parse::complex_type::parse(
+                node,
+                &Name::new(&self.parent_name, Namespace::None),
+                ctx,
+            ),
             "simpleType" => super::parse::simple_type::parse(node, ctx),
             child_name => Err(XsdError::UnsupportedElement {
                 name: child_name.to_string(),
