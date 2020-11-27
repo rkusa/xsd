@@ -1,4 +1,4 @@
-use super::{get_xml_name, ElementDefault, LeafDefinition, Name, Namespaces, State};
+use super::{get_xml_name, ElementDefault, LeafContent, LeafDefinition, Name, Namespaces, State};
 use crate::generator::escape_ident;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
@@ -53,17 +53,29 @@ impl Leaf {
         let inner = self.definition.to_xml_impl(element_default);
 
         let mut tn = TokenStream::new();
-        // We don't really want to create a wrapping element here for virtual leaves but still
-        // require a `start` var even though that it will not be used.
-        // TODO: is there a better way?
-        tn.append_all(quote! {
-            let start = XmlEvent::start_element(#name_xml);
-            #inner
-        });
-
-        if !self.is_virtual {
+        if self.is_virtual {
             tn.append_all(quote! {
-                writer.write(XmlEvent::end_element())?;
+                let mut ctx = ::xsd::Context::wrap(&mut ctx);
+            });
+        } else {
+            tn.append_all(quote! {
+                let mut ctx = ::xsd::Context::new(#name_xml);
+            });
+        }
+
+        let wrap = !self.is_virtual
+            && !matches!(self.definition, LeafDefinition{content: LeafContent::Named(_),..});
+        if wrap {
+            tn.append_all(quote! {
+                ctx.write_start_element(writer)?;
+            });
+        }
+
+        tn.append_all(inner);
+
+        if wrap {
+            tn.append_all(quote! {
+                ctx.write_end_element(writer)?;
             })
         }
 
@@ -84,7 +96,9 @@ impl Leaf {
 
         quote! {
             let val = &self.#name_ident;
-            #tn
+            {
+                #tn
+            }
         }
     }
 

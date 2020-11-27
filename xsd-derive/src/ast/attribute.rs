@@ -33,29 +33,25 @@ impl Attribute {
             let set_attr = if let Some(default) = &self.default {
                 quote! {
                     if val != #default {
-                        start.attr(#name_xml, &val)
-                    } else {
-                        start
+                        ctx.set_attr(#name_xml, val)
                     }
                 }
             } else {
-                quote! { start.attr(#name_xml, &val) }
+                quote! { ctx.set_attr(#name_xml, val) }
             };
             quote! {
                 let val = self.#name_ident.as_ref().map(|val| {
                     #inner
                 });
-                let start = if let Some(val) = &val {
+                if let Some(val) = val {
                     #set_attr
-                } else {
-                    start
-                };
+                }
             }
         } else {
             quote! {
                 let val = &self.#name_ident;
                 let val = #inner;
-                let start = start.attr(#name_xml, &val);
+                ctx.set_attr(#name_xml, val);
             }
         }
     }

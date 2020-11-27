@@ -58,9 +58,9 @@ pub fn generate(
         let mut element_ns = Vec::new();
         if let Some(tn) = schema.target_namespace() {
             if schema.qualified() {
-                element_ns.push(quote! { .default_ns(#tn) });
+                element_ns.push(quote! { .set_default_ns(#tn) });
             } else {
-                element_ns.push(quote! { .ns("tn", #tn) });
+                element_ns.push(quote! { .set_ns("tn", #tn) });
             }
         }
 
@@ -79,33 +79,20 @@ pub fn generate(
                         encoding: Some("UTF-8"),
                         standalone: None,
                     })?;
-                    let start = XmlEvent::start_element(#name_xml);
-                    self.to_xml_writer(start, &mut writer)?;
+                    let mut ctx = ::xsd::Context::new(#name_xml);
+                    self.to_xml_writer(ctx, &mut writer)?;
 
                     Ok(body)
                 }
 
-                fn to_xml_writer<W: ::std::io::Write>(
-                    &self,
-                    start: ::xml::writer::events::StartElementBuilder<'_>,
+                fn to_xml_writer<'a, 'b, W: ::std::io::Write>(
+                    &'a self,
+                    mut ctx: ::xsd::Context<'a, 'b>,
                     writer: &mut ::xml::writer::EventWriter<W>,
                 ) -> Result<(), ::xml::writer::Error> {
                     use ::xml::writer::events::XmlEvent;
 
-                    #(let start = start#element_ns;)*
-                    #to_xml
-                    writer.write(XmlEvent::end_element())?;
-
-                    Ok(())
-                }
-
-                fn to_xml_writer_flattened<W: ::std::io::Write>(
-                    &self,
-                    start: ::xml::writer::events::StartElementBuilder<'_>,
-                    writer: &mut ::xml::writer::EventWriter<W>,
-                ) -> Result<(), ::xml::writer::Error> {
-                    use ::xml::writer::events::XmlEvent;
-
+                    #(ctx#element_ns;)*
                     #to_xml
 
                     Ok(())

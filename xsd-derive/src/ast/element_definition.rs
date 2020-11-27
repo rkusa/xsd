@@ -1,4 +1,6 @@
-use super::{Attribute, ElementContent, ElementDefault, Namespaces, State};
+use super::{
+    Attribute, ElementContent, ElementDefault, LeafContent, LeafDefinition, Namespaces, State,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
@@ -27,17 +29,19 @@ impl ElementDefinition {
         for attr in &self.attributes {
             ts.append_all(attr.to_xml_impl(element_default));
         }
+        let is_named_leaf = matches!(self.content, Some(ElementContent::Leaf(LeafDefinition {
+            content: LeafContent::Named(_),
+            ..
+        })));
+        let wrap = !self.is_virtual && !is_named_leaf;
+        if wrap {
+            ts.append_all(quote! { ctx.write_start_element(writer)?; });
+        }
         if let Some(content) = &self.content {
-            // TODO: rework when element starts are written to make it easier to understand and
-            // extend ...
-            if !self.is_virtual && matches!(content, ElementContent::Leaves(_)) {
-                ts.append_all(quote! { writer.write(start)?; });
-            }
             ts.append_all(content.to_xml_impl(element_default));
-        } else {
-            ts.append_all(quote! {
-                writer.write(start)?;
-            });
+        }
+        if wrap {
+            ts.append_all(quote! { ctx.write_end_element(writer)?; });
         }
         ts
     }

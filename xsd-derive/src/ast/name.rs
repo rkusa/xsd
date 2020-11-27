@@ -35,7 +35,7 @@ impl Name {
 
     pub fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
         quote! {
-            val.to_xml_writer_flattened(start, writer)?;
+            val.to_xml_writer(ctx, writer)?;
         }
     }
 

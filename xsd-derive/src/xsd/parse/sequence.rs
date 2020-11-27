@@ -26,20 +26,11 @@ where
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
                 let variants = super::choice::parse(child, parent, ctx)?;
-                let mut virtual_name = String::new();
-                for v in &variants {
-                    if !v.name.name.is_empty() {
-                        virtual_name += (&v.name.name[0..1]).to_ascii_uppercase().as_str();
-                        virtual_name += &v.name.name[1..];
-                    }
-                }
+                let leaf_name = super::derive_virtual_name(variants.iter().map(|v| &v.name), ctx);
+                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx);
 
-                let leaf_name = ctx.get_node_name(&virtual_name, false);
-
-                let virtual_name = parent.name.to_string() + &virtual_name;
-                let virtual_name = ctx.get_node_name(&virtual_name, false);
                 ctx.add_root(
-                    virtual_name.clone(),
+                    root_name.clone(),
                     Root::Choice(ChoiceDefinition {
                         variants,
                         is_virtual: true,
@@ -49,7 +40,7 @@ where
                 Leaf {
                     name: leaf_name,
                     definition: LeafDefinition {
-                        content: LeafContent::Named(virtual_name),
+                        content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
                     },
                     is_virtual: true,
@@ -61,20 +52,11 @@ where
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
                 let leaves = parse(child, parent, ctx)?;
-                let mut virtual_name = String::new();
-                for v in &leaves {
-                    if !v.name.name.is_empty() {
-                        virtual_name += (&v.name.name[0..1]).to_ascii_uppercase().as_str();
-                        virtual_name += &v.name.name[1..];
-                    }
-                }
+                let leaf_name = super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx);
+                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx);
 
-                let leaf_name = ctx.get_node_name(&virtual_name, false);
-
-                let virtual_name = parent.name.to_string() + &virtual_name;
-                let virtual_name = ctx.get_node_name(&virtual_name, false);
                 ctx.add_root(
-                    virtual_name.clone(),
+                    root_name.clone(),
                     Root::Element(ElementDefinition {
                         attributes: Vec::new(),
                         content: Some(ElementContent::Leaves(leaves)),
@@ -85,7 +67,7 @@ where
                 Leaf {
                     name: leaf_name,
                     definition: LeafDefinition {
-                        content: LeafContent::Named(virtual_name),
+                        content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
                     },
                     is_virtual: true,

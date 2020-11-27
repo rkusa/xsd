@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use super::{ElementDefault, ElementDefinition, Leaf, LeafDefinition, Name, Namespaces, State};
+use super::{
+    ElementDefault, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name, Namespaces, State,
+};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -103,16 +105,27 @@ impl Root {
         match self {
             Root::Leaf(def) => {
                 let inner = def.to_xml_impl(element_default);
-                quote! {
+                let tn = quote! {
                     let val = &self.0;
                     #inner
+                };
+                // TODO: improve those cases to make them easier to understand
+                if !matches!(def, LeafDefinition { content: LeafContent::Named(_), .. }) {
+                    quote! {
+                        ctx.write_start_element(writer)?;
+                        #tn
+                        ctx.write_end_element(writer)?;
+                    }
+                } else {
+                    tn
                 }
             }
             Root::Enum(_) => {
                 quote! {
-                    writer.write(start)?;
+                    ctx.write_start_element(writer)?;
                     let val = self.as_str();
                     writer.write(XmlEvent::characters(&val))?;
+                    ctx.write_end_element(writer)?;
                 }
             }
             Root::Element(def) => def.to_xml_impl(element_default),
@@ -126,21 +139,25 @@ impl Root {
                     let name_xml = &name.name;
                     quote! {
                         Self::#ident(val) => {
-                            let start = XmlEvent::start_element(#name_xml);
-                            val.to_xml_writer(start, writer)?
+                            let mut ctx = ::xsd::Context::new(#name_xml);
+                            val.to_xml_writer(ctx, writer)?
                         }
                     }
                 });
-                let start_element = if *is_virtual {
-                    quote! {}
-                } else {
-                    quote! { writer.write(start)?; }
-                };
 
-                quote! {
-                    #start_element
+                let tn = quote! {
                     match self {
                         #(#variants,)*
+                    }
+                };
+
+                if *is_virtual {
+                    tn
+                } else {
+                    quote! {
+                        ctx.write_start_element(writer)?;
+                        #tn
+                        ctx.write_end_element(writer)?;
                     }
                 }
             }

@@ -21,7 +21,6 @@ impl LeafContent {
             LeafContent::Literal(literal) => {
                 let inner = literal.to_xml_impl(element_default);
                 quote! {
-                    writer.write(start)?;
                     let val = #inner;
                     writer.write(XmlEvent::characters(&val))?;
                 }
