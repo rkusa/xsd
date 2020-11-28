@@ -16,6 +16,10 @@ pub fn parse(node: Node<'_, '_>) -> Result<Option<String>, XsdError> {
             }
         });
 
+    while children.remove("documentation", Some(NS_XSD)).is_some() {
+        // TODO: actually use additional documentation tags
+    }
+
     children.prevent_unvisited_children()?;
     node.prevent_unvisited_attributes()?;
 

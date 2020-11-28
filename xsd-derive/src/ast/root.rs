@@ -6,7 +6,7 @@ use super::{
 };
 use inflector::Inflector;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::{format_ident, quote, TokenStreamExt};
 use syn::Ident;
 
 #[derive(Debug, Clone)]
@@ -42,9 +42,34 @@ impl Root {
         match self {
             Root::Leaf(def) => {
                 let inner = def.to_impl(state);
-                quote! {
+                let mut tn = quote! {
                     (pub #inner);
+                };
+                if matches!(def.content, LeafContent::Literal(_)) {
+                    let type_ = root_name.to_string();
+                    tn.append_all(quote! {
+                        impl ::std::str::FromStr for #root_name {
+                            type Err = ::xsd::decode::FromXmlError;
+
+                            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                                Ok(#root_name(::std::str::FromStr::from_str(s).map_err(|err| {
+                                    ::xsd::decode::FromXmlError::ParseType {
+                                        type_: #type_.to_string(),
+                                        value: s.to_string(),
+                                        err: Box::new(err),
+                                    }
+                                })?))
+                            }
+                        }
+
+                        impl ::std::fmt::Display for #root_name {
+                            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                                self.0.fmt(f)
+                            }
+                        }
+                    })
                 }
+                tn
             }
             Root::Enum(names) => {
                 let names = escape_enum_names(names.clone());
@@ -87,6 +112,12 @@ impl Root {
                             match self {
                                 #(#as_str_variants,)*
                             }
+                        }
+                    }
+
+                    impl ::std::fmt::Display for #root_name {
+                        fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                            f.write_str(self.as_str())
                         }
                     }
                 }
@@ -140,7 +171,7 @@ impl Root {
             Root::Enum(_) => {
                 quote! {
                     ctx.write_start_element(writer)?;
-                    let val = self.as_str();
+                    let val = self.to_string();
                     writer.write(XmlEvent::characters(&val))?;
                     ctx.write_end_element(writer)?;
                 }

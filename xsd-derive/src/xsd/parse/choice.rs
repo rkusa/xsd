@@ -21,6 +21,12 @@ where
         let variant = match child.name() {
             "element" => super::element::parse_child(child, parent, ctx)?,
             "sequence" => {
+                let docs = child
+                    .child("annotation", Some(NS_XSD))
+                    .map(super::annotation::parse)
+                    .transpose()?
+                    .flatten();
+
                 let leaves = super::sequence::parse(child, parent, ctx)?;
                 let leaf_name =
                     super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
@@ -45,7 +51,7 @@ where
                     definition: LeafDefinition {
                         content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
-                        docs: None,
+                        docs,
                     },
                     is_virtual: true,
                     min_occurs: MinOccurs::default(),

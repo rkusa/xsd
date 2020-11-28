@@ -12,17 +12,25 @@ impl ElementContent {
     pub fn to_impl(&self, state: &mut State) -> TokenStream {
         match self {
             ElementContent::Leaf(leaf) => {
+                let docs = leaf
+                    .docs
+                    .as_ref()
+                    .map(|docs| quote! { #[doc = #docs] })
+                    .unwrap_or_else(TokenStream::new);
                 let inner = leaf.to_impl(state);
-                // TODO: prevent collisions between the randomly chosen `value` and attributes that
-                // are possibly named `value`
-                quote!(pub value: #inner,)
+                // TODO: prevent collisions between the randomly chosen `pub value_` and attributes that
+                // are possibly named `pub value_`
+                quote! {
+                    #docs
+                    pub value_: #inner,
+                }
             }
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
                     .map(|el| el.to_impl(state))
                     .collect::<Vec<_>>();
-                quote!(#(pub #properties,)*)
+                quote!(#(#properties,)*)
             }
         }
     }
@@ -32,7 +40,7 @@ impl ElementContent {
             ElementContent::Leaf(leaf) => {
                 let inner = leaf.to_xml_impl(element_default);
                 quote! {
-                    let val = &self.value;
+                    let val = &self.value_;
                     #inner;
                 }
             }
@@ -57,7 +65,7 @@ impl ElementContent {
             ElementContent::Leaf(leaf) => {
                 let inner = leaf.from_xml_impl(element_default, namespaces);
                 quote! {
-                    value: {
+                    value_: {
                         let val = node.text()?;
                         #inner
                     },

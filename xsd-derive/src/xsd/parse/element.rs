@@ -1,6 +1,8 @@
 use std::str::FromStr;
 
-use crate::ast::{Leaf, LeafContent, LeafDefinition, MaxOccurs, MinOccurs, Name, Root};
+use crate::ast::{
+    Leaf, LeafContent, LeafDefinition, LiteralType, MaxOccurs, MinOccurs, Name, Root,
+};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::{Attribute, Node};
 use crate::xsd::XsdError;
@@ -76,9 +78,17 @@ where
     let min_occurs = parse_min_occurs(node.attribute("minOccurs"))?;
     let max_occurs = parse_max_occurs(node.attribute("maxOccurs"))?;
 
-    // TODO: handle `default` similar to attributes?
     // mark `default` attribute as visited
     node.attribute("default");
+
+    // TODO: implement attribute?
+    node.attribute("form");
+
+    let docs = node
+        .child("annotation", Some(NS_XSD))
+        .map(super::annotation::parse)
+        .transpose()?
+        .flatten();
 
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
@@ -93,7 +103,24 @@ where
             definition: LeafDefinition {
                 content,
                 restrictions: Vec::new(),
-                docs: None,
+                docs,
+            },
+            is_virtual: false,
+            min_occurs,
+            max_occurs,
+        })
+    } else if node.child("simpleType", Some(NS_XSD)).is_none()
+        && node.child("complexType", Some(NS_XSD)).is_none()
+    {
+        node.prevent_unvisited_attributes()?;
+
+        // TODO: add test for that case
+        Ok(Leaf {
+            name,
+            definition: LeafDefinition {
+                content: LeafContent::Literal(LiteralType::Any),
+                restrictions: Vec::new(),
+                docs,
             },
             is_virtual: false,
             min_occurs,
@@ -117,7 +144,7 @@ where
             definition: LeafDefinition {
                 content: LeafContent::Named(virtual_name),
                 restrictions: Vec::new(),
-                docs: None,
+                docs,
             },
             is_virtual: false,
             min_occurs,

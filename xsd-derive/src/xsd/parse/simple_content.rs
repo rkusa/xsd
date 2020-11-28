@@ -1,10 +1,11 @@
-use crate::ast::{ElementContent, ElementDefinition, LeafContent, LeafDefinition};
+use crate::ast::{ElementContent, ElementDefinition, LeafContent, LeafDefinition, Name};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
 
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
+    parent: &Name,
     ctx: &Context<'a, 'input>,
 ) -> Result<ElementDefinition, XsdError>
 where
@@ -27,7 +28,7 @@ where
     // read all attributes
     let mut attributes = Vec::new();
     while let Some(child) = children.remove("attribute", Some(NS_XSD)) {
-        if let Some(attr) = super::attribute::parse(child, ctx)? {
+        if let Some(attr) = super::attribute::parse(child, parent, ctx)? {
             attributes.push(attr);
         }
     }

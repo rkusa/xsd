@@ -36,7 +36,7 @@ impl Attribute {
         let name_xml = get_xml_name(&self.name, element_default.qualified);
         let inner = match &self.content {
             LeafContent::Literal(literal) => literal.to_xml_impl(element_default),
-            LeafContent::Named(_) => quote! { val.as_str() },
+            LeafContent::Named(_) => quote! { val.to_string() },
         };
         if self.is_optional {
             quote! {

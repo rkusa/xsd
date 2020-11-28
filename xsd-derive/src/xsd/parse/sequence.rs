@@ -52,6 +52,12 @@ where
                 }
             }
             "sequence" => {
+                let docs = child
+                    .child("annotation", Some(NS_XSD))
+                    .map(super::annotation::parse)
+                    .transpose()?
+                    .flatten();
+
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
                 let leaves = parse(child, parent, ctx)?;
@@ -74,13 +80,14 @@ where
                     definition: LeafDefinition {
                         content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
-                        docs: None,
+                        docs,
                     },
                     is_virtual: true,
                     min_occurs,
                     max_occurs: MaxOccurs::default(),
                 }
             }
+            "annotation" => continue,
             child_name => {
                 return Err(XsdError::UnsupportedElement {
                     name: child_name.to_string(),

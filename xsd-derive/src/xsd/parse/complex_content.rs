@@ -75,7 +75,7 @@ where
     // read all attributes
     let mut attributes = Vec::new();
     while let Some(child) = children.remove("attribute", Some(NS_XSD)) {
-        if let Some(attr) = super::attribute::parse(child, ctx)? {
+        if let Some(attr) = super::attribute::parse(child, parent, ctx)? {
             attributes.push(attr);
         }
     }

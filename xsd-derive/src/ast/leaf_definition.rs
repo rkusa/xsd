@@ -13,6 +13,7 @@ pub struct LeafDefinition {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Restriction {
+    Length(usize),
     MinLength(usize),
     MaxLength(usize),
     Pattern(String),

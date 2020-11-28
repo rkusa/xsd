@@ -1,10 +1,11 @@
-use crate::ast::{Attribute, LeafContent, Name, Namespace};
+use crate::ast::{Attribute, LeafContent, LeafDefinition, Name, Namespace, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
 
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
+    parent: &Name,
     ctx: &Context<'a, 'input>,
 ) -> Result<Option<Attribute>, XsdError>
 where
@@ -19,13 +20,36 @@ where
         .transpose()?
         .flatten();
 
-    children.prevent_unvisited_children()?;
+    let content = if let Some(child) = children.remove("simpleType", Some(NS_XSD)) {
+        let root = super::simple_type::parse(child, ctx)?;
+        if let Root::Leaf(LeafDefinition {
+            content: LeafContent::Literal(content),
+            ..
+        }) = root
+        {
+            // NOTEN: flatten the type is only fine as long as we don't have sepcial handling
+            // for restrictions
+            LeafContent::Literal(content)
+        } else {
+            let virtual_name = super::derive_virtual_name(
+                vec![parent, &name, &ctx.get_node_name("Data", false)],
+                ctx,
+                false,
+            );
+            ctx.add_root(virtual_name.clone(), root);
 
-    let type_attr = node.try_attribute("type")?;
-    let content = ctx.get_type_name(&type_attr)?;
-    if let LeafContent::Named(name) = &content {
-        ctx.discover_type(&name);
-    }
+            LeafContent::Named(virtual_name)
+        }
+    } else {
+        let type_attr = node.try_attribute("type")?;
+        let content = ctx.get_type_name(&type_attr)?;
+        if let LeafContent::Named(name) = &content {
+            ctx.discover_type(&name);
+        }
+        content
+    };
+
+    children.prevent_unvisited_children()?;
 
     let default = node.attribute("default").map(|a| a.value().to_string());
     let is_optional = match node.attribute("use").map(|attr| attr.value()).as_deref() {

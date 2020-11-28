@@ -46,6 +46,14 @@ where
                     Namespace::None,
                 ));
             }
+            "length" => {
+                let attr = child.try_attribute("value")?;
+                let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
+                    err,
+                    range: attr.range(),
+                })?;
+                restrictions.push(Restriction::Length(value));
+            }
             "minLength" => {
                 let attr = child.try_attribute("value")?;
                 let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {

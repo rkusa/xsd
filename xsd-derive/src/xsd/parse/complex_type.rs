@@ -32,7 +32,9 @@ where
     // TODO: simpleContent xor complexContent xor the following
 
     if let Some(child) = children.remove("simpleContent", Some(NS_XSD)) {
-        return Ok(Root::Element(super::simple_content::parse(child, ctx)?));
+        return Ok(Root::Element(super::simple_content::parse(
+            child, parent, ctx,
+        )?));
     }
     if let Some(child) = children.remove("complexContent", Some(NS_XSD)) {
         return Ok(Root::Element(super::complex_content::parse(
@@ -87,7 +89,7 @@ where
     // read all attributes
     let mut attributes = Vec::new();
     while let Some(child) = children.remove("attribute", Some(NS_XSD)) {
-        if let Some(attr) = super::attribute::parse(child, ctx)? {
+        if let Some(attr) = super::attribute::parse(child, parent, ctx)? {
             attributes.push(attr);
         }
     }

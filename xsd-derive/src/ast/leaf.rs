@@ -61,7 +61,7 @@ impl Leaf {
             .unwrap_or_else(TokenStream::new);
         quote! {
             #docs
-            #name_ident: #type_ident
+            pub #name_ident: #type_ident
         }
     }
 
