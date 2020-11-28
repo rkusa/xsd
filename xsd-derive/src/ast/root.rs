@@ -265,11 +265,26 @@ impl Root {
                             return None;
                         }
                         *prev_required = !leaf.is_optional();
-                        let name_xml = &leaf.name.name;
-                        let namespace_xml = leaf.name.namespace.to_quote(&element_default);
-                        Some(quote! {
-                            node.peek_child(#name_xml, #namespace_xml)
-                        })
+
+                        if leaf.is_virtual {
+                            let name = if let LeafContent::Named(name) = &leaf.definition.content {
+                                name
+                            } else {
+                                // unreachable  ...
+                                // TODO: reflect that in the type?
+                                unreachable!()
+                            };
+                            let name = format_ident!("{}", name.name.to_pascal_case());
+                            Some(quote! {
+                                #name::lookahead(node)
+                            })
+                        } else {
+                            let name_xml = &leaf.name.name;
+                            let namespace_xml = leaf.name.namespace.to_quote(&element_default);
+                            Some(quote! {
+                                node.peek_child(#name_xml, #namespace_xml)
+                            })
+                        }
                     });
 
                     quote! {
@@ -283,10 +298,24 @@ impl Root {
             }
             Root::Choice(ChoiceDefinition { variants, .. }) => {
                 let checks = variants.iter().map(|variant| {
-                    let name_xml = &variant.name.name;
-                    let namespace_xml = variant.name.namespace.to_quote(&element_default);
-                    quote! {
-                        node.peek_child(#name_xml, #namespace_xml)
+                    if variant.is_virtual {
+                        let name = if let LeafContent::Named(name) = &variant.definition.content {
+                            name
+                        } else {
+                            // unreachable  ...
+                            // TODO: reflect that in the type?
+                            unreachable!()
+                        };
+                        let name = format_ident!("{}", name.name.to_pascal_case());
+                        quote! {
+                            #name::lookahead(node)
+                        }
+                    } else {
+                        let name_xml = &variant.name.name;
+                        let namespace_xml = variant.name.namespace.to_quote(&element_default);
+                        quote! {
+                            node.peek_child(#name_xml, #namespace_xml)
+                        }
                     }
                 });
 
