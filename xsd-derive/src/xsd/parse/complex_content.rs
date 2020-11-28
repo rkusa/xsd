@@ -24,7 +24,7 @@ where
 
     let attr = extension.try_attribute("base")?;
     let content = ctx.get_type_name(&attr)?;
-    match &content {
+    let base_name = match &content {
         LeafContent::Literal(_) => {
             return Err(XsdError::UnsupportedAttributeValue {
                 name: "base".to_string(),
@@ -33,8 +33,11 @@ where
                 range: attr.range(),
             })
         }
-        LeafContent::Named(name) => ctx.discover_type(name),
-    }
+        LeafContent::Named(name) => {
+            ctx.discover_type(name);
+            name
+        }
+    };
 
     let mut children = extension.children().namespace(NS_XSD).collect();
     let mut virtual_leaves = Vec::new();
@@ -43,7 +46,7 @@ where
         let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
         let leaves = super::sequence::parse(child, parent, ctx)?;
-        let leaf_name = super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
+        let leaf_name = ctx.get_node_name(&base_name.name, false);
         let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
 
         ctx.add_root(

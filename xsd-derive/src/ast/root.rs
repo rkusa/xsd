@@ -230,9 +230,12 @@ impl Root {
                     }
                 });
 
+                let variant_name = name.to_string();
                 quote! {
                     #(#variants else )* {
-                        return Err(::xsd::decode::FromXmlError::MissingVariant)
+                        return Err(::xsd::decode::FromXmlError::MissingVariant {
+                            name: #variant_name.to_string(),
+                        })
                     }
                 }
             }
@@ -257,16 +260,20 @@ impl Root {
                     ..
                 } = &def
                 {
-                    if let Some(first) = leaves.first() {
-                        let name_xml = &first.name.name;
-                        let namespace_xml = first.name.namespace.to_quote(&element_default);
-                        quote! {
+                    let checks = leaves.iter().scan(false, |prev_required, leaf| {
+                        if *prev_required {
+                            return None;
+                        }
+                        *prev_required = !leaf.is_optional();
+                        let name_xml = &leaf.name.name;
+                        let namespace_xml = leaf.name.namespace.to_quote(&element_default);
+                        Some(quote! {
                             node.peek_child(#name_xml, #namespace_xml)
-                        }
-                    } else {
-                        quote! {
-                            false
-                        }
+                        })
+                    });
+
+                    quote! {
+                        false #(|| #checks)*
                     }
                 } else {
                     quote! {

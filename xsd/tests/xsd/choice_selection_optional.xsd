@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="GeometryType">
+		<xs:sequence>
+			<xs:element name="diameter" type="xs:float" />
+			<xs:choice>
+				<xs:sequence>
+					<xs:element name="thickness" minOccurs="0" maxOccurs="unbounded">
+						<xs:complexType>
+							<xs:simpleContent>
+								<xs:extension base="xs:float">
+									<xs:attribute name="reference" type="xs:string" use="required" />
+								</xs:extension>
+							</xs:simpleContent>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="thicknessReduction" default="false" minOccurs="0">
+						<xs:complexType>
+							<xs:simpleContent>
+								<xs:extension base="xs:boolean">
+									<xs:attribute name="reference" type="xs:string" use="required" />
+								</xs:extension>
+							</xs:simpleContent>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+				<xs:element name="thicknessReductionThin" type="xs:boolean" default="false" minOccurs="0" />
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+  <xs:element name="geometry" type="GeometryType" />
+</xs:schema>

@@ -11,7 +11,7 @@ fn complex_content_sequence_optional() {
             id: 42,
             name: "Foobar".to_string(),
         },
-        role_enabled: Some(schema::AccountRoleEnabled {
+        user: Some(schema::AccountUser {
             role: schema::Roles::Admin,
             enabled: true,
         }),
