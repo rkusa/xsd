@@ -36,6 +36,7 @@ where
                         attributes: Vec::new(),
                         content: Some(ElementContent::Leaves(leaves)),
                         is_virtual: true,
+                        docs: None,
                     }),
                 );
 
@@ -44,6 +45,7 @@ where
                     definition: LeafDefinition {
                         content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
+                        docs: None,
                     },
                     is_virtual: true,
                     min_occurs: MinOccurs::default(),

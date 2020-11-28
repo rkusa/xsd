@@ -10,6 +10,7 @@ pub struct Attribute {
     pub content: LeafContent,
     pub default: Option<String>,
     pub is_optional: bool,
+    pub docs: Option<String>,
 }
 
 impl Attribute {
@@ -19,7 +20,15 @@ impl Attribute {
         if self.is_optional {
             type_ident = quote! { Option<#type_ident> };
         }
-        quote! { pub #name_ident: #type_ident, }
+        let docs = self
+            .docs
+            .as_ref()
+            .map(|docs| quote! { #[doc = #docs] })
+            .unwrap_or_else(TokenStream::new);
+        quote! {
+            #docs
+            pub #name_ident: #type_ident,
+        }
     }
 
     pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {

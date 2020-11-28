@@ -55,6 +55,7 @@ where
                 attributes: Vec::new(),
                 content: Some(ElementContent::Leaves(leaves)),
                 is_virtual: true,
+                docs: None,
             }),
         );
 
@@ -63,6 +64,7 @@ where
             definition: LeafDefinition {
                 content: LeafContent::Named(root_name),
                 restrictions: Vec::new(),
+                docs: None,
             },
             is_virtual: true,
             min_occurs,
@@ -87,6 +89,7 @@ where
             ElementContent::Leaf(LeafDefinition {
                 content,
                 restrictions: Vec::new(),
+                docs: None,
             })
         } else {
             let mut leaves = vec![Leaf {
@@ -94,6 +97,7 @@ where
                 definition: LeafDefinition {
                     content,
                     restrictions: Vec::new(),
+                    docs: None,
                 },
                 is_virtual: true,
                 min_occurs: MinOccurs::default(),
@@ -103,5 +107,6 @@ where
             ElementContent::Leaves(leaves)
         }),
         is_virtual: false,
+        docs: None,
     })
 }

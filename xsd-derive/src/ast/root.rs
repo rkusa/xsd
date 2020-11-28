@@ -21,11 +21,21 @@ pub enum Root {
 pub struct ChoiceDefinition {
     pub variants: Vec<Leaf>,
     pub is_virtual: bool,
+    pub docs: Option<String>,
 }
 
 impl Root {
     pub fn is_enum(&self) -> bool {
         matches!(self, Root::Enum(_) | Root::Choice(_))
+    }
+
+    pub fn docs(&self) -> Option<&str> {
+        match self {
+            Root::Leaf(def) => def.docs.as_deref(),
+            Root::Enum(_) => None,
+            Root::Element(def) => def.docs.as_deref(),
+            Root::Choice(def) => def.docs.as_deref(),
+        }
     }
 
     pub fn to_declaration(&self, root_name: &Ident, state: &mut State) -> TokenStream {
@@ -139,6 +149,7 @@ impl Root {
             Root::Choice(ChoiceDefinition {
                 variants,
                 is_virtual,
+                ..
             }) => {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {

@@ -10,6 +10,7 @@ pub struct ElementDefinition {
     pub attributes: Vec<Attribute>,
     pub content: Option<ElementContent>,
     pub is_virtual: bool,
+    pub docs: Option<String>,
 }
 
 impl ElementDefinition {

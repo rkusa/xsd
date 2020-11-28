@@ -39,7 +39,9 @@ where
         content: Some(ElementContent::Leaf(LeafDefinition {
             content,
             restrictions: Vec::new(),
+            docs: None,
         })),
         is_virtual: false,
+        docs: None,
     })
 }

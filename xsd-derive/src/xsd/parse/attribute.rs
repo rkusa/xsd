@@ -13,11 +13,11 @@ where
     let name = Name::new(node.try_attribute("name")?.value(), Namespace::None);
 
     let mut children = node.children().namespace(NS_XSD).collect();
-    // TODO: actually use docs
-    let _docs = children
+    let docs = children
         .remove("annotation", Some(NS_XSD))
         .map(super::annotation::parse)
-        .transpose()?;
+        .transpose()?
+        .flatten();
 
     children.prevent_unvisited_children()?;
 
@@ -56,5 +56,6 @@ where
         content,
         default,
         is_optional,
+        docs,
     }))
 }

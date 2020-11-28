@@ -53,7 +53,16 @@ impl Leaf {
         if self.is_optional() {
             type_ident = quote! { Option<#type_ident> }
         }
-        quote! { #name_ident: #type_ident }
+        let docs = self
+            .definition
+            .docs
+            .as_ref()
+            .map(|docs| quote! { #[doc = #docs] })
+            .unwrap_or_else(TokenStream::new);
+        quote! {
+            #docs
+            #name_ident: #type_ident
+        }
     }
 
     pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {

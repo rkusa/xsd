@@ -46,8 +46,13 @@ pub fn generate(
             quote!(struct)
         };
         let declaration = &el.to_declaration(&name_ident, &mut state);
+        let docs = el
+            .docs()
+            .map(|docs| quote! { #[doc = #docs] })
+            .unwrap_or_else(TokenStream::new);
 
         structs.append_all(quote! {
+            #docs
             #[derive(Debug, Clone, PartialEq)]
             pub #kind #name_ident#declaration
         });

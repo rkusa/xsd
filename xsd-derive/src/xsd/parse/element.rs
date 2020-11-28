@@ -12,9 +12,18 @@ pub fn parse_root<'a, 'input>(
 where
     'a: 'input,
 {
+    let mut children = node.children().namespace(NS_XSD).collect();
+    let docs = children
+        .remove("annotation", Some(NS_XSD))
+        .map(super::annotation::parse)
+        .transpose()?
+        .flatten();
+
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
         node.prevent_unvisited_attributes()?;
+        children.prevent_unvisited_children()?;
+
         let content = ctx.get_type_name(attr)?;
         if let LeafContent::Named(name) = &content {
             ctx.discover_type(name);
@@ -22,17 +31,12 @@ where
         Ok(Root::Leaf(LeafDefinition {
             content,
             restrictions: Vec::new(),
+            docs,
         }))
     } else {
         node.prevent_unvisited_attributes()?;
-        let mut children = node.children().namespace(NS_XSD).collect();
-        // TODO: actually use docs
-        let _docs = children
-            .remove("annotation", Some(NS_XSD))
-            .map(super::annotation::parse)
-            .transpose()?;
 
-        let result = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
+        let mut result = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
             let name = node.try_attribute("name")?.value();
             let name = ctx.get_node_name(&name, false);
             super::complex_type::parse(child, &name, ctx)?
@@ -45,6 +49,13 @@ where
                 range: node.range(),
             });
         };
+
+        match &mut result {
+            Root::Leaf(def) => def.docs = docs,
+            Root::Enum(_) => {}
+            Root::Element(def) => def.docs = docs,
+            Root::Choice(def) => def.docs = docs,
+        }
 
         children.prevent_unvisited_children()?;
 
@@ -82,6 +93,7 @@ where
             definition: LeafDefinition {
                 content,
                 restrictions: Vec::new(),
+                docs: None,
             },
             is_virtual: false,
             min_occurs,
@@ -102,6 +114,7 @@ where
             definition: LeafDefinition {
                 content: LeafContent::Named(virtual_name),
                 restrictions: Vec::new(),
+                docs: None,
             },
             is_virtual: false,
             min_occurs,

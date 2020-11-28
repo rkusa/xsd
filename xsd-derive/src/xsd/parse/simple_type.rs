@@ -2,8 +2,7 @@ use std::str::FromStr;
 
 use rust_decimal::Decimal;
 
-use crate::ast::Namespace::None;
-use crate::ast::{LeafContent, LeafDefinition, Name, Restriction, Root};
+use crate::ast::{LeafContent, LeafDefinition, Name, Namespace, Restriction, Root};
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::node::Node;
 use crate::xsd::XsdError;
@@ -44,7 +43,7 @@ where
             "enumeration" => {
                 enumerations.push(Name::new(
                     child.try_attribute("value")?.value().into_owned(),
-                    None,
+                    Namespace::None,
                 ));
             }
             "minLength" => {
@@ -114,6 +113,7 @@ where
         Root::Leaf(LeafDefinition {
             content: LeafContent::Literal(type_),
             restrictions,
+            docs: None,
         })
     } else {
         Root::Enum(enumerations)

@@ -8,6 +8,7 @@ pub struct LeafDefinition {
     // pub docs: Option<String>,
     pub restrictions: Vec<Restriction>,
     // pub fixed: Option<String>,
+    pub docs: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
