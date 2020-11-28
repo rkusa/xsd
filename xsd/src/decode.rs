@@ -123,9 +123,13 @@ impl<'a> Node<'a> {
     }
 
     pub fn text(&self) -> Result<&str, FromXmlError> {
-        self.node.text().ok_or_else(|| FromXmlError::TextExpected {
-            name: self.node.tag_name().name().to_string(),
-        })
+        if self.node.first_child().is_none() {
+            Ok("")
+        } else {
+            self.node.text().ok_or_else(|| FromXmlError::TextExpected {
+                name: self.node.tag_name().name().to_string(),
+            })
+        }
     }
 
     pub fn range(&self) -> Range<usize> {

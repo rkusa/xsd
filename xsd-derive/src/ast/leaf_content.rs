@@ -22,7 +22,9 @@ impl LeafContent {
                 let inner = literal.to_xml_impl(element_default);
                 quote! {
                     let val = #inner;
-                    writer.write(XmlEvent::characters(&val))?;
+                    if !val.is_empty() {
+                        writer.write(XmlEvent::characters(&val))?;
+                    }
                 }
             }
             LeafContent::Named(name) => name.to_xml_impl(element_default),

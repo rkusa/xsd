@@ -172,7 +172,9 @@ impl Root {
                 quote! {
                     ctx.write_start_element(writer)?;
                     let val = self.to_string();
-                    writer.write(XmlEvent::characters(&val))?;
+                    if !val.is_empty() {
+                        writer.write(XmlEvent::characters(&val))?;
+                    }
                     ctx.write_end_element(writer)?;
                 }
             }
