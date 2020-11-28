@@ -1,16 +1,14 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::mem;
+use std::rc::Rc;
 
-use super::lazy::Lazy;
-use super::node::{Attribute, Node};
+use super::node::Attribute;
 use super::XsdError;
 use crate::ast::{LeafContent, LiteralType, Name, Namespace, Root};
 
 pub struct Context<'a, 'input> {
-    simple_types: HashMap<Name, Lazy<'a, 'input>>,
-    complex_types: HashMap<Name, Lazy<'a, 'input>>,
-    elements: HashMap<Name, Lazy<'a, 'input>>,
-    roots: HashMap<Name, Root>,
+    roots: Rc<RefCell<HashMap<Name, Root>>>,
     default_namespace: Option<&'input str>,
     target_namespace: Option<&'a str>,
     namespaces: HashMap<&'input str, &'input str>,
@@ -31,10 +29,7 @@ where
             }
         }
         Context {
-            simple_types: HashMap::new(),
-            complex_types: HashMap::new(),
-            elements: HashMap::new(),
-            roots: HashMap::new(),
+            roots: Default::default(),
             default_namespace: schema.default_namespace(),
             target_namespace,
             namespaces,
@@ -42,43 +37,18 @@ where
         }
     }
 
-    pub fn add_simple_type(&mut self, name: Name, node: Node<'a, 'input>) {
-        let parent_name = name.name.to_string();
-        self.simple_types.insert(name, Lazy::new(node, parent_name));
-    }
-
-    pub fn add_complex_type(&mut self, name: Name, node: Node<'a, 'input>) {
-        let parent_name = name.name.to_string();
-        self.complex_types
-            .insert(name, Lazy::new(node, parent_name));
-    }
-
-    pub fn add_element(&mut self, name: Name, node: Node<'a, 'input>) {
-        let parent_name = name.name.to_string();
-        self.elements.insert(name, Lazy::new(node, parent_name));
-    }
-
-    pub fn add_root(&mut self, name: Name, root: Root) {
-        self.roots.insert(name, root);
+    pub fn add_root(&self, name: Name, root: Root) {
+        let mut roots = self.roots.borrow_mut();
+        roots.insert(name, root);
     }
 
     pub fn take_roots(&mut self) -> HashMap<Name, Root> {
-        mem::take(&mut self.roots)
+        let mut roots = self.roots.borrow_mut();
+        mem::take(&mut roots)
     }
 
-    pub fn discover_type(&mut self, name: &Name) {
-        let type_ = self
-            .complex_types
-            .remove(name)
-            .or_else(|| self.simple_types.remove(name));
-        if let Some(node) = type_ {
-            self.elements.insert(name.clone(), node);
-        }
-    }
-
-    pub fn remove_elements(&mut self) -> impl Iterator<Item = (Name, Lazy<'a, 'input>)> {
-        let elements = std::mem::take(&mut self.elements);
-        elements.into_iter()
+    pub fn discover_type(&self, _name: &Name) {
+        // TODO: track dependencies for tree shaking unused types
     }
 
     pub fn get_node_name(&self, name: &str, is_top_level: bool) -> Name {

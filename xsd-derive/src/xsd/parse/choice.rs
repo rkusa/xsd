@@ -9,7 +9,7 @@ use crate::xsd::XsdError;
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
-    ctx: &mut Context<'a, 'input>,
+    ctx: &Context<'a, 'input>,
 ) -> Result<Vec<Leaf>, XsdError>
 where
     'a: 'input,
@@ -55,7 +55,6 @@ where
             child_name => {
                 return Err(XsdError::UnsupportedElement {
                     name: child_name.to_string(),
-                    parent: node.name().to_string(),
                     range: child.range(),
                 })
             }

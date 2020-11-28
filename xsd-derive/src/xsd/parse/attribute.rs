@@ -5,7 +5,7 @@ use crate::xsd::XsdError;
 
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
-    ctx: &mut Context<'a, 'input>,
+    ctx: &Context<'a, 'input>,
 ) -> Result<Option<Attribute>, XsdError>
 where
     'a: 'input,

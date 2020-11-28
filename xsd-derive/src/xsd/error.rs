@@ -8,12 +8,8 @@ pub enum XsdError {
     // Import(#[from] SchemaError),
     #[error("Error traversing XML tree: {0}")]
     Node(#[from] super::node::NodeError),
-    #[error("Encountered unsupported element `{name}` in `{parent}`")]
-    UnsupportedElement {
-        name: String,
-        parent: String,
-        range: Range<usize>,
-    },
+    #[error("Encountered unsupported element `{name}` at that location")]
+    UnsupportedElement { name: String, range: Range<usize> },
     #[error("Encountered unsupported value `{value}` for attribute `{name}` in `{element}`")]
     UnsupportedAttributeValue {
         name: String,
@@ -55,20 +51,6 @@ pub enum XsdError {
     },
     #[error("Unsupported XSD type {name}")]
     UnsupportedType { name: String, range: Range<usize> },
-    #[error("Encountered circular type while parsing {name}")]
-    CircularType { name: String, range: Range<usize> },
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Error on line {row} (offset {col} in {file}): {err}")]
-    Xsd {
-        #[source]
-        err: Box<XsdError>,
-        file: String,
-        col: u32,
-        row: u32,
-    },
 }
 
 impl XsdError {
@@ -87,7 +69,6 @@ impl XsdError {
             XsdError::ParseInt { range, .. } => Some(range),
             XsdError::ParseDecimal { range, .. } => Some(range),
             XsdError::UnsupportedType { range, .. } => Some(range),
-            XsdError::CircularType { range, .. } => Some(range),
         }
     }
 }

@@ -2,7 +2,7 @@ test: xmllint
 	cargo test
 
 xmllint:
-	@$(foreach file, $(wildcard xsd/tests/xsd/*.xsd), xmllint --noout --schema $(file) $(file:.xsd=.xml);)
+	@$(foreach file, $(wildcard xsd/tests/xsd/*.xml), xmllint --noout --schema $(file:.xml=.xsd) $(file);)
 
 # Usage: make create_test name=...
 create_test:

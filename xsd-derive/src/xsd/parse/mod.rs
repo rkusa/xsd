@@ -4,6 +4,7 @@ mod choice;
 mod complex_content;
 pub mod complex_type;
 pub mod element;
+pub mod root;
 mod sequence;
 mod simple_content;
 pub mod simple_type;

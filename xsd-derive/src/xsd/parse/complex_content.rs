@@ -11,7 +11,7 @@ use super::element::parse_min_occurs;
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
-    ctx: &mut Context<'a, 'input>,
+    ctx: &Context<'a, 'input>,
 ) -> Result<ElementDefinition, XsdError>
 where
     'a: 'input,

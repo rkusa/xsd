@@ -1,31 +1,14 @@
 use std::collections::HashMap;
-use std::{fs::read_to_string, path::Path};
+use std::path::Path;
 
 use crate::ast::{get_xml_name, ElementDefault};
-use crate::error::GeneratorError;
-use crate::xsd::Schema;
+use crate::xsd::{Schema, SchemaError};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
 
-pub fn generate(
-    item: &syn::ItemMod,
-    path: impl AsRef<Path>,
-) -> Result<TokenStream, GeneratorError> {
-    let path = path.as_ref();
-    let base_path = path.parent().unwrap_or(path);
-
-    let data = match read_to_string(&path) {
-        Ok(data) => data,
-        Err(err) => {
-            return Err(GeneratorError::Open {
-                err,
-                file: path.to_string_lossy().to_string(),
-            })
-        }
-    };
-
-    let schema = Schema::parse(&data, base_path)?;
+pub fn generate(item: &syn::ItemMod, path: impl AsRef<Path>) -> Result<TokenStream, SchemaError> {
+    let schema = Schema::parse_file(path)?;
     // TODO: derive from schema
     let namespaces = HashMap::new();
     let element_default = ElementDefault {

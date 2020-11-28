@@ -1,7 +1,6 @@
 // #![allow(unused)]
 
 mod ast;
-mod error;
 mod generator;
 mod xsd;
 

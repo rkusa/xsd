@@ -7,7 +7,7 @@ use crate::xsd::XsdError;
 
 pub fn parse_root<'a, 'input>(
     node: Node<'a, 'input>,
-    ctx: &mut Context<'a, 'input>,
+    ctx: &Context<'a, 'input>,
 ) -> Result<Root, XsdError>
 where
     'a: 'input,
@@ -66,7 +66,7 @@ where
 pub fn parse_child<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
-    ctx: &mut Context<'a, 'input>,
+    ctx: &Context<'a, 'input>,
 ) -> Result<Leaf, XsdError>
 where
     'a: 'input,
@@ -108,7 +108,10 @@ where
             ctx,
             false,
         );
-        ctx.add_element(virtual_name.clone(), node);
+        ctx.add_root(
+            virtual_name.clone(),
+            super::root::parse(node, &virtual_name, ctx)?,
+        );
         Ok(Leaf {
             name,
             definition: LeafDefinition {

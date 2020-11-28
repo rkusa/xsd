@@ -1,9 +1,12 @@
+use std::borrow::Cow;
+use std::fs::read_to_string;
+use std::io;
 use std::{collections::HashMap, path::Path};
 
 use roxmltree::{Document, TextPos};
 
 use super::context::{Context, NS_XSD};
-use super::error::{Error, XsdError};
+use super::error::XsdError;
 use super::node::Node;
 use crate::ast::{Name, Namespace, Root};
 
@@ -14,13 +17,29 @@ pub struct Schema {
 }
 
 impl Schema {
-    pub fn parse(data: &str, path: impl AsRef<Path>) -> Result<Self, Error> {
+    pub fn parse_file(path: impl AsRef<Path>) -> Result<Self, SchemaError> {
+        let path = path.as_ref();
+
+        let data = match read_to_string(&path) {
+            Ok(data) => data,
+            Err(err) => {
+                return Err(SchemaError::Open {
+                    err,
+                    file: path.to_string_lossy().to_string(),
+                })
+            }
+        };
+
+        Schema::parse(&data, path)
+    }
+
+    pub fn parse(data: &str, path: impl AsRef<Path>) -> Result<Self, SchemaError> {
         let path = path.as_ref().to_path_buf();
-        let doc = match Document::parse(&data) {
+        let doc = match Document::parse(data) {
             Ok(doc) => doc,
             Err(err) => {
                 let pos = err.pos();
-                return Err(Error::Xsd {
+                return Err(SchemaError::Xsd {
                     file: path.to_string_lossy().to_string(),
                     row: pos.row,
                     col: pos.col,
@@ -30,37 +49,40 @@ impl Schema {
         };
 
         let base_path = path.parent().unwrap_or_else(|| path.as_path());
-        Schema::parse_schema(doc.root_element().into(), base_path, None).map_err(|err| {
-            let pos = err
-                .range()
-                .map(|range| doc.text_pos_at(range.start))
-                .unwrap_or_else(|| TextPos { row: 0, col: 0 });
-            Error::Xsd {
-                file: path.to_string_lossy().to_string(),
-                row: pos.row,
-                col: pos.col,
-                err: Box::new(err),
+        let root_node = doc.root_element().into();
+        Schema::parse_schema(&root_node, base_path, None).map_err(|err| match err {
+            ParseError::Schema(err) => err,
+            ParseError::Xsd(err) => {
+                let pos = err
+                    .range()
+                    .map(|range| doc.text_pos_at(range.start))
+                    .unwrap_or_else(|| TextPos { row: 0, col: 0 });
+                SchemaError::Xsd {
+                    file: path.to_string_lossy().to_string(),
+                    row: pos.row,
+                    col: pos.col,
+                    err: Box::new(err),
+                }
             }
         })
     }
 
     fn parse_schema(
-        root: Node<'_, '_>,
-        _base_path: &Path,
+        root: &Node<'_, '_>,
+        base_path: &Path,
         target_namespace: Option<&str>,
-    ) -> Result<Self, XsdError> {
+    ) -> Result<Self, ParseError> {
         if root.namespace().as_deref() != Some(NS_XSD) || root.name() != "schema" {
             return Err(XsdError::UnsupportedElement {
                 name: root.name().to_string(),
-                parent: "".to_string(),
                 range: root.range(),
-            });
+            }
+            .into());
         }
 
-        let target_namespace = target_namespace.map(|tn| tn.to_string()).or_else(|| {
-            root.attribute("targetNamespace")
-                .map(|a| a.value().to_string())
-        });
+        let target_namespace = target_namespace
+            .map(Cow::Borrowed)
+            .or_else(|| root.attribute("targetNamespace").map(|a| a.value()));
         let qualified = root
             .attribute("elementFormDefault")
             .map(|a| a.value())
@@ -69,9 +91,20 @@ impl Schema {
         let mut ctx = Context::new(&root, target_namespace.as_deref());
 
         for child in root.children().namespace(NS_XSD).iter() {
-            if child.name() == "import" {
-                unimplemented!("import");
-                // continue;
+            // TODO: prevent circular includes
+            if child.name() == "include" {
+                // TODO: make sure that it is a relative path
+                let location: &str = &child.try_attribute("schemaLocation")?.value();
+                let mut path = base_path.to_path_buf();
+                path.push(location);
+
+                // merge imports
+                let import = Schema::parse_file(path)?;
+                for (name, root) in import.elements {
+                    ctx.add_root(name, root);
+                }
+
+                continue;
             }
 
             let name = Name::new(
@@ -84,43 +117,13 @@ impl Schema {
                 },
             );
 
-            match child.name() {
-                "element" => {
-                    ctx.add_element(name, child);
-                }
-                "simpleType" => {
-                    ctx.add_simple_type(name, child);
-                }
-                "complexType" => {
-                    ctx.add_complex_type(name, child);
-                }
-                child_name => {
-                    return Err(XsdError::UnsupportedElement {
-                        name: child_name.to_string(),
-                        parent: root.name().to_string(),
-                        range: child.range(),
-                    })
-                }
-            }
+            let root = crate::xsd::parse::root::parse(child, &name, &ctx)?;
+            ctx.add_root(name, root);
         }
-
-        let mut elements = HashMap::new();
-        loop {
-            let mut has_more = false;
-            for (name, definition) in ctx.remove_elements() {
-                has_more = true;
-                elements.insert(name.clone(), definition.try_get(&mut ctx)?.clone());
-            }
-            if !has_more {
-                break;
-            }
-        }
-
-        elements.extend(ctx.take_roots());
 
         Ok(Schema {
-            elements,
-            target_namespace,
+            elements: ctx.take_roots(),
+            target_namespace: target_namespace.map(String::from),
             qualified,
         })
     }
@@ -135,5 +138,37 @@ impl Schema {
 
     pub fn qualified(&self) -> bool {
         self.qualified
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum SchemaError {
+    #[error("Error on line {row} (offset {col} in {file}): {err}")]
+    Xsd {
+        #[source]
+        err: Box<XsdError>,
+        file: String,
+        col: u32,
+        row: u32,
+    },
+    #[error("Failed to load XSD include {file}: {err}")]
+    Open {
+        #[source]
+        err: io::Error,
+        file: String,
+    },
+}
+
+#[derive(Debug, thiserror::Error)]
+enum ParseError {
+    #[error("{0}")]
+    Schema(#[from] SchemaError),
+    #[error("{0}")]
+    Xsd(#[from] XsdError),
+}
+
+impl From<super::node::NodeError> for ParseError {
+    fn from(err: super::node::NodeError) -> Self {
+        ParseError::Xsd(err.into())
     }
 }
