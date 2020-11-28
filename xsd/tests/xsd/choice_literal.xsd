@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="article">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element name="user" type="xs:string" />
+          <xs:element name="bot" type="xs:string" />
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

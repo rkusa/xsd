@@ -145,6 +145,16 @@ impl Root {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
                     let name_xml = &variant.name.name;
                     let inner = variant.definition.to_xml_impl(element_default);
+                    let is_literal = matches!(variant.definition.content, LeafContent::Literal(_));
+                    let inner = if is_literal {
+                        quote! {
+                            ctx.write_start_element(writer)?;
+                            #inner
+                            ctx.write_end_element(writer)?;
+                        }
+                    } else {
+                        inner
+                    };
                     quote! {
                         Self::#variant_name(val) => {
                             let mut ctx = ::xsd::Context::new(#name_xml);
