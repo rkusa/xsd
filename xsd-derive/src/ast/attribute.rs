@@ -30,21 +30,12 @@ impl Attribute {
             LeafContent::Named(_) => quote! { val.as_str() },
         };
         if self.is_optional {
-            let set_attr = if let Some(default) = &self.default {
-                quote! {
-                    if val != #default {
-                        ctx.set_attr(#name_xml, val)
-                    }
-                }
-            } else {
-                quote! { ctx.set_attr(#name_xml, val) }
-            };
             quote! {
                 let val = self.#name_ident.as_ref().map(|val| {
                     #inner
                 });
                 if let Some(val) = val {
-                    #set_attr
+                    ctx.set_attr(#name_xml, val)
                 }
             }
         } else {
@@ -64,16 +55,11 @@ impl Attribute {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
         let inner = self.content.from_str_impl();
-        let default = if let Some(default) = &self.default {
-            quote! { .or(Some(#default)) }
-        } else {
-            quote! {}
-        };
 
         if self.is_optional {
             quote! {
                 #name_ident: {
-                    if let Some(val) = node.attribute(#name_xml)#default {
+                    if let Some(val) = node.attribute(#name_xml) {
                         Some(#inner)
                     } else {
                         None
