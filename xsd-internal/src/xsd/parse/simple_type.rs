@@ -25,7 +25,7 @@ where
     let type_name = ctx.get_type_name(&attr)?;
     let type_ = match type_name {
         LeafContent::Literal(type_) => type_,
-        LeafContent::Named(_) => {
+        LeafContent::Named(_) | LeafContent::Fixed(_) => {
             return Err(XsdError::UnsupportedAttributeValue {
                 name: "base".to_string(),
                 value: attr.value().to_string(),

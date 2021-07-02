@@ -7,7 +7,6 @@ pub struct LeafDefinition {
     pub content: LeafContent,
     // pub docs: Option<String>,
     pub restrictions: Vec<Restriction>,
-    // pub fixed: Option<String>,
     pub docs: Option<String>,
 }
 

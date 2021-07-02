@@ -6,6 +6,7 @@ use quote::quote;
 pub enum LeafContent {
     Literal(LiteralType),
     Named(Name),
+    Fixed(String),
 }
 
 impl LeafContent {
@@ -13,6 +14,7 @@ impl LeafContent {
         match self {
             LeafContent::Literal(literal) => literal.to_impl(state),
             LeafContent::Named(name) => name.to_impl(state),
+            LeafContent::Fixed(_) => quote!(()),
         }
     }
 
@@ -28,6 +30,9 @@ impl LeafContent {
                 }
             }
             LeafContent::Named(name) => name.to_xml_impl(element_default),
+            LeafContent::Fixed(fixed) => quote! {
+                writer.write(XmlEvent::characters(#fixed))?;
+            },
         }
     }
 
@@ -47,6 +52,20 @@ impl LeafContent {
                 }
             }
             LeafContent::Named(name) => name.from_xml_impl(element_default, namespaces),
+            LeafContent::Fixed(fixed) => {
+                quote! {
+                    {
+                        let val = node.text()?;
+                        if val != #fixed {
+                            return Err(::xsd::decode::FromXmlError::FixedMismatch {
+                                expected: #fixed,
+                                received: val.to_string(),
+                            });
+                        }
+                        ()
+                    }
+                }
+            }
         }
     }
 
@@ -54,6 +73,7 @@ impl LeafContent {
         match self {
             LeafContent::Literal(literal) => literal.from_str_impl(),
             LeafContent::Named(name) => name.from_str_impl(),
+            LeafContent::Fixed(_) => quote! { () },
         }
     }
 }

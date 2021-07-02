@@ -26,6 +26,11 @@ pub enum FromXmlError {
         value: String,
         err: Box<dyn std::error::Error + Sync + Send>,
     },
+    #[error("Expected fixed value `{expected}`, but received `{received}`")]
+    FixedMismatch {
+        expected: &'static str,
+        received: String,
+    },
 }
 
 pub struct Document<'a>(roxmltree::Document<'a>);

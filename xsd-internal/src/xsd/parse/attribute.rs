@@ -38,10 +38,17 @@ where
         }
     } else {
         let type_attr = node.try_attribute("type")?;
-        let content = ctx.get_type_name(&type_attr)?;
-        if let LeafContent::Named(name) = &content {
-            ctx.discover_type(&name);
+        let mut content = ctx.get_type_name(&type_attr)?;
+        match &mut content {
+            LeafContent::Named(name) => ctx.discover_type(name),
+            content @ LeafContent::Literal(_) => {
+                if let Some(attr) = node.attribute("fixed") {
+                    *content = LeafContent::Fixed(attr.value().to_string());
+                }
+            }
+            _ => {}
         }
+
         content
     };
 

@@ -25,7 +25,7 @@ where
     let attr = extension.try_attribute("base")?;
     let content = ctx.get_type_name(&attr)?;
     let base_name = match &content {
-        LeafContent::Literal(_) => {
+        LeafContent::Literal(_) | LeafContent::Fixed(_) => {
             return Err(XsdError::UnsupportedAttributeValue {
                 name: "base".to_string(),
                 value: attr.value().to_string(),

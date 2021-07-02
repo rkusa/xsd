@@ -37,6 +37,7 @@ impl Attribute {
         let inner = match &self.content {
             LeafContent::Literal(literal) => literal.to_xml_impl(element_default),
             LeafContent::Named(_) => quote! { val.to_string() },
+            LeafContent::Fixed(fixed) => quote! { #fixed },
         };
         if self.is_optional {
             quote! {

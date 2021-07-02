@@ -1,8 +1,11 @@
 test: xmllint
 	cargo test
 
-xmllint:
-	@$(foreach file, $(wildcard xsd/tests/xsd/*.xml), xmllint --noout --schema $(file:.xml=.xsd) $(file);)
+XML_FILES := $(wildcard xsd/tests/xsd/*.xml)
+xmllint: ${XML_FILES}
+
+xsd/tests/xsd/%.xml: xsd/tests/xsd/%.xsd
+	xmllint --noout --schema $< $@
 
 # Usage: make create_test name=...
 create_test:

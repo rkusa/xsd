@@ -19,13 +19,20 @@ where
 
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
+        let mut content = ctx.get_type_name(attr)?;
+        match &mut content {
+            LeafContent::Named(name) => ctx.discover_type(name),
+            content @ LeafContent::Literal(_) => {
+                if let Some(attr) = node.attribute("fixed") {
+                    *content = LeafContent::Fixed(attr.value().to_string());
+                }
+            }
+            _ => {}
+        }
+
         node.prevent_unvisited_attributes()?;
         children.prevent_unvisited_children()?;
 
-        let content = ctx.get_type_name(attr)?;
-        if let LeafContent::Named(name) = &content {
-            ctx.discover_type(name);
-        }
         Ok(Root::Leaf(LeafDefinition {
             content,
             restrictions: Vec::new(),
@@ -34,7 +41,7 @@ where
     } else {
         node.prevent_unvisited_attributes()?;
 
-        let mut result = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
+        let result = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
             let name = node.try_attribute("name")?.value();
             let name = ctx.get_node_name(&name, false);
             super::complex_type::parse(child, &name, ctx)?
@@ -48,16 +55,9 @@ where
             });
         };
 
-        match &mut result {
-            Root::Leaf(def) => def.docs = docs,
-            Root::Enum(_) => {}
-            Root::Element(def) => def.docs = docs,
-            Root::Choice(def) => def.docs = docs,
-        }
-
         children.prevent_unvisited_children()?;
 
-        Ok(result)
+        Ok(result.with_docs(docs))
     }
 }
 
@@ -84,12 +84,19 @@ where
 
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
+        let mut content = ctx.get_type_name(attr)?;
+        match &mut content {
+            LeafContent::Named(name) => ctx.discover_type(name),
+            content @ LeafContent::Literal(_) => {
+                if let Some(attr) = node.attribute("fixed") {
+                    *content = LeafContent::Fixed(attr.value().to_string());
+                }
+            }
+            _ => {}
+        }
+
         node.prevent_unvisited_attributes()?;
 
-        let content = ctx.get_type_name(attr)?;
-        if let LeafContent::Named(name) = &content {
-            ctx.discover_type(name);
-        }
         Ok(Leaf {
             name,
             definition: LeafDefinition {

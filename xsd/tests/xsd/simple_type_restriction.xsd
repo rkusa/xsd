@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:simpleType name="Side">
+  <xs:simpleType name="SideEnum">
     <xs:annotation>
       <xs:documentation>The side.</xs:documentation>
     </xs:annotation>
@@ -9,4 +9,6 @@
       <xs:enumeration value="LEFT"/>
     </xs:restriction>
   </xs:simpleType>
+  <xs:element name="Side" type="SideEnum">
+  </xs:element>
 </xs:schema>

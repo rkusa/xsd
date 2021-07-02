@@ -25,6 +25,18 @@ pub struct ChoiceDefinition {
 }
 
 impl Root {
+    pub fn with_docs(mut self, docs: Option<String>) -> Self {
+        if docs.is_some() {
+            match &mut self {
+                Root::Leaf(def) => def.docs = docs,
+                Root::Enum(_) => {}
+                Root::Element(def) => def.docs = docs,
+                Root::Choice(def) => def.docs = docs,
+            }
+        }
+        self
+    }
+
     pub fn is_enum(&self) -> bool {
         matches!(self, Root::Enum(_) | Root::Choice(_))
     }
