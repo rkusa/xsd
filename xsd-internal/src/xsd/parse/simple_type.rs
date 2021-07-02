@@ -17,6 +17,12 @@ where
     node.prevent_unvisited_attributes()?;
 
     let mut children = node.children().namespace(NS_XSD).collect();
+    let docs = children
+        .remove("annotation", Some(NS_XSD))
+        .map(super::annotation::parse)
+        .transpose()?
+        .flatten();
+
     let restriction = children.try_remove("restriction", Some(NS_XSD))?;
 
     let attr = restriction.try_attribute("base")?;
@@ -120,7 +126,7 @@ where
         Root::Leaf(LeafDefinition {
             content: LeafContent::Literal(type_),
             restrictions,
-            docs: None,
+            docs,
         })
     } else {
         Root::Enum(enumerations)
