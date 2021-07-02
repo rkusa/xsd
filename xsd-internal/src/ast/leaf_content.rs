@@ -60,7 +60,7 @@ impl LeafContent {
                             return Err(::xsd::decode::FromXmlError::FixedMismatch {
                                 expected: #fixed,
                                 received: val.to_string(),
-                            });
+                            }.into());
                         }
                         ()
                     }

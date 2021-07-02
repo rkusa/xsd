@@ -21,7 +21,7 @@ where
     if let Some(attr) = node.attribute("type") {
         let mut content = ctx.get_type_name(attr)?;
         match &mut content {
-            LeafContent::Named(name) => ctx.discover_type(name),
+            LeafContent::Named(name) => ctx.discover_type(name, None),
             content @ LeafContent::Literal(_) => {
                 if let Some(attr) = node.attribute("fixed") {
                     *content = LeafContent::Fixed(attr.value().to_string());
@@ -86,7 +86,7 @@ where
     if let Some(attr) = node.attribute("type") {
         let mut content = ctx.get_type_name(attr)?;
         match &mut content {
-            LeafContent::Named(name) => ctx.discover_type(name),
+            LeafContent::Named(name) => ctx.discover_type(name, Some(parent)),
             content @ LeafContent::Literal(_) => {
                 if let Some(attr) = node.attribute("fixed") {
                     *content = LeafContent::Fixed(attr.value().to_string());

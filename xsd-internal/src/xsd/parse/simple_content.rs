@@ -20,7 +20,7 @@ where
     let attr = extension.try_attribute("base")?;
     let content = ctx.get_type_name(&attr)?;
     if let LeafContent::Named(name) = &content {
-        ctx.discover_type(name);
+        ctx.discover_type(name, Some(parent));
     }
 
     let mut children = extension.children().namespace(NS_XSD).collect();

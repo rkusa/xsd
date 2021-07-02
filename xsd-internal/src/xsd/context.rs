@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::rc::Rc;
 
@@ -12,6 +12,8 @@ pub struct Context<'a, 'input> {
     default_namespace: Option<&'input str>,
     target_namespace: Option<&'a str>,
     namespaces: HashMap<&'input str, &'input str>,
+    /// Dependencies between structs. Key = parent, Value = child
+    dependencies: Rc<RefCell<HashMap<Name, HashSet<Name>>>>,
     is_qualified: bool,
 }
 
@@ -33,6 +35,7 @@ where
             default_namespace: schema.default_namespace(),
             target_namespace,
             namespaces,
+            dependencies: Default::default(),
             is_qualified: schema.attribute("elementFormDefault") == Some("qualified"),
         }
     }
@@ -47,8 +50,17 @@ where
         mem::take(&mut roots)
     }
 
-    pub fn discover_type(&self, _name: &Name) {
-        // TODO: track dependencies for tree shaking unused types
+    pub fn take_dependencies(&mut self) -> HashMap<Name, HashSet<Name>> {
+        let mut dependencies = self.dependencies.borrow_mut();
+        mem::take(&mut dependencies)
+    }
+
+    pub fn discover_type(&self, name: &Name, parent: Option<&Name>) {
+        if let Some(parent) = parent {
+            let mut dependencies = self.dependencies.borrow_mut();
+            let dependends = dependencies.entry(parent.clone()).or_default();
+            dependends.insert(name.clone());
+        }
     }
 
     pub fn get_node_name(&self, name: &str, is_top_level: bool) -> Name {

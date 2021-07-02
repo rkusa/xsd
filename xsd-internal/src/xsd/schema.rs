@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::io;
 use std::ops::Range;
@@ -7,7 +8,7 @@ use std::{collections::HashMap, path::Path};
 use super::context::{Context, NS_XSD};
 use super::error::XsdError;
 use super::node::Node;
-use crate::ast::{get_xml_name, ElementDefault, Name, Namespace, Root};
+use crate::ast::{get_xml_name, ElementDefault, Name, Namespace, Namespaces, Root};
 use crate::utils::escape_ident;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
@@ -16,6 +17,7 @@ use roxmltree::{Document, TextPos};
 
 pub struct Schema {
     elements: HashMap<Name, Root>,
+    dependencies: HashMap<Name, HashSet<Name>>,
     target_namespace: Option<String>,
     qualified: bool,
 }
@@ -127,6 +129,7 @@ impl Schema {
 
         Ok(Schema {
             elements: ctx.take_roots(),
+            dependencies: ctx.take_dependencies(),
             target_namespace: target_namespace.map(String::from),
             qualified,
         })
@@ -134,10 +137,6 @@ impl Schema {
 
     pub fn elements(&self) -> impl Iterator<Item = (&Name, &Root)> {
         self.elements.iter()
-    }
-
-    pub fn element_names(&self) -> impl Iterator<Item = &Name> {
-        self.elements.keys()
     }
 
     pub fn target_namespace(&self) -> Option<&str> {
@@ -148,7 +147,79 @@ impl Schema {
         self.qualified
     }
 
-    pub fn generate_element(&self, name: &Name) -> Result<TokenStream, SchemaError> {
+    pub fn generate_all(&self) -> Result<TokenStream, SchemaError> {
+        // TODO: derive from schema
+        let namespaces = HashMap::new();
+        let element_default = ElementDefault {
+            target_namespace: self.target_namespace().map(|tn| tn.to_string()),
+            qualified: self.qualified(),
+        };
+        let state = ();
+        let mut result = TokenStream::new();
+
+        for name in self.elements.keys() {
+            result.append_all(self.generate_element(name, state, &namespaces, &element_default)?);
+        }
+
+        Ok(result)
+    }
+
+    pub fn generate_element_and_dependencies<'a>(
+        &'a self,
+        name: &'a Name,
+        already_generated: &mut HashSet<&'a Name>,
+    ) -> Result<TokenStream, SchemaError> {
+        // TODO: derive from schema
+        let namespaces = HashMap::new();
+        let element_default = ElementDefault {
+            target_namespace: self.target_namespace().map(|tn| tn.to_string()),
+            qualified: self.qualified(),
+        };
+        let state = ();
+        let mut result = TokenStream::new();
+
+        let mut names = HashSet::with_capacity(1);
+        let mut new_names = HashSet::with_capacity(1);
+        new_names.insert(name);
+
+        loop {
+            if new_names.is_empty() {
+                break;
+            }
+
+            let mut next_names = HashSet::new();
+            for name in &new_names {
+                if let Some(dependends) = self.dependencies.get(name) {
+                    for d in dependends {
+                        if !names.contains(d) && !new_names.contains(d) {
+                            next_names.insert(d);
+                        }
+                    }
+                }
+            }
+
+            names.extend(new_names);
+            new_names = next_names;
+        }
+
+        for name in names {
+            if already_generated.contains(name) {
+                continue;
+            }
+            result.append_all(self.generate_element(name, state, &namespaces, &element_default)?);
+            already_generated.insert(name);
+        }
+
+        Ok(result)
+    }
+
+    fn generate_element<'a>(
+        &self,
+        name: &Name,
+        mut state: (),
+        namespaces: &'a Namespaces<'a>,
+        element_default: &ElementDefault,
+    ) -> Result<TokenStream, SchemaError> {
         let el = self
             .elements
             .get(name)
@@ -156,14 +227,7 @@ impl Schema {
                 name: name.name.clone(),
             })?;
 
-        // TODO: derive from schema
-        let namespaces = HashMap::new();
-        let element_default = ElementDefault {
-            target_namespace: self.target_namespace().map(|tn| tn.to_string()),
-            qualified: self.qualified(),
-        };
         let mut result = TokenStream::new();
-        let mut state = ();
 
         // TODO: handle duplicates with different prefixes
         let name_ident = escape_ident(&name.name.to_pascal_case());
@@ -184,7 +248,7 @@ impl Schema {
             pub #kind #name_ident#declaration
         });
 
-        let to_xml = el.to_xml_impl(&element_default);
+        let to_xml = el.to_xml_impl(element_default);
 
         let name_xml = get_xml_name(&name, element_default.qualified);
         let mut element_ns = Vec::new();

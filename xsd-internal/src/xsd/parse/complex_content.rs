@@ -34,7 +34,7 @@ where
             })
         }
         LeafContent::Named(name) => {
-            ctx.discover_type(name);
+            ctx.discover_type(name, Some(parent));
             name
         }
     };

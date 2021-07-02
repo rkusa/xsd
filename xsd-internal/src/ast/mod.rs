@@ -27,7 +27,7 @@ pub struct ElementDefault {
 }
 pub type State = ();
 
-type Namespaces<'a> = HashMap<&'a str, &'a str>;
+pub type Namespaces<'a> = HashMap<&'a str, &'a str>;
 
 pub fn get_xml_name(name: &Name, qualified: bool) -> String {
     match &name.namespace {

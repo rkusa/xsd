@@ -1,17 +1,12 @@
 use std::path::Path;
 
 use proc_macro2::TokenStream;
-use quote::{quote, TokenStreamExt};
+use quote::quote;
 use xsd_internal::xsd::schema::{Schema, SchemaError};
 
 pub fn generate(item: &syn::ItemMod, path: impl AsRef<Path>) -> Result<TokenStream, SchemaError> {
     let schema = Schema::parse_file(path)?;
-    let mut structs = TokenStream::new();
-
-    for name in schema.element_names() {
-        // eprintln!("{:#?} {:#?}", name, el);
-        structs.append_all(schema.generate_element(name)?);
-    }
+    let structs = schema.generate_all()?;
 
     let attrs = &item.attrs;
     let vis = &item.vis;

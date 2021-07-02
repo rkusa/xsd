@@ -40,7 +40,7 @@ where
         let type_attr = node.try_attribute("type")?;
         let mut content = ctx.get_type_name(&type_attr)?;
         match &mut content {
-            LeafContent::Named(name) => ctx.discover_type(name),
+            LeafContent::Named(name) => ctx.discover_type(name, Some(parent)),
             content @ LeafContent::Literal(_) => {
                 if let Some(attr) = node.attribute("fixed") {
                     *content = LeafContent::Fixed(attr.value().to_string());

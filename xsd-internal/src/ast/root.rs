@@ -307,7 +307,7 @@ impl Root {
                     #(#variants else )* {
                         return Err(::xsd::decode::FromXmlError::MissingVariant {
                             name: #variant_name.to_string(),
-                        })
+                        }.into())
                     }
                 }
             }
