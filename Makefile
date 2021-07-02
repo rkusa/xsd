@@ -4,6 +4,7 @@ test: xmllint
 XML_FILES := $(wildcard xsd/tests/xsd/*.xml)
 xmllint: ${XML_FILES}
 
+MAKEFLAGS+="-B"
 xsd/tests/xsd/%.xml: xsd/tests/xsd/%.xsd
 	xmllint --noout --schema $< $@
 
