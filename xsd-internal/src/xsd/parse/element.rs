@@ -4,8 +4,8 @@ use crate::ast::{
     Leaf, LeafContent, LeafDefinition, LiteralType, MaxOccurs, MinOccurs, Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
+use crate::xsd::error::XsdError;
 use crate::xsd::node::{Attribute, Node};
-use crate::xsd::XsdError;
 
 pub fn parse_root<'a, 'input>(
     node: Node<'a, 'input>,

@@ -3,8 +3,8 @@ use crate::ast::{
     Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
+use crate::xsd::error::XsdError;
 use crate::xsd::node::Node;
-use crate::xsd::XsdError;
 
 use super::element::parse_min_occurs;
 

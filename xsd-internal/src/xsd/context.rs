@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
 
+use super::error::XsdError;
 use super::node::Attribute;
-use super::XsdError;
 use crate::ast::{LeafContent, LiteralType, Name, Namespace, Root};
 
 pub struct Context<'a, 'input> {

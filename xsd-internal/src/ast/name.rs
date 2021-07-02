@@ -1,4 +1,4 @@
-use crate::generator::escape_ident;
+use crate::utils::escape_ident;
 
 use super::{ElementDefault, Namespaces, State};
 use inflector::Inflector;

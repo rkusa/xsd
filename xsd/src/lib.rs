@@ -2,6 +2,7 @@ pub mod decode;
 
 pub use xml;
 pub use xsd_derive::all;
+pub use xsd_internal as internal;
 
 use std::borrow::Cow;
 use std::mem;

@@ -1,6 +1,6 @@
 use crate::xsd::context::NS_XSD;
+use crate::xsd::error::XsdError;
 use crate::xsd::node::Node;
-use crate::xsd::XsdError;
 
 pub fn parse(node: Node<'_, '_>) -> Result<Option<String>, XsdError> {
     let mut children = node.children().namespace(NS_XSD).collect();

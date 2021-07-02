@@ -8,6 +8,7 @@ edition = "2018"
 roxmltree = "0.14"
 thiserror = "1.0"
 xsd-derive = { path = "../xsd-derive" }
+xsd-internal = { path = "../xsd-internal" }
 xml-rs = "0.8"
 
 [dev-dependencies]

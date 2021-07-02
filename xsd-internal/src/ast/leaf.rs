@@ -1,5 +1,5 @@
 use super::{get_xml_name, ElementDefault, LeafContent, LeafDefinition, Name, Namespaces, State};
-use crate::generator::escape_ident;
+use crate::utils::escape_ident;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};

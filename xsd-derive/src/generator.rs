@@ -1,120 +1,16 @@
-use std::collections::HashMap;
 use std::path::Path;
 
-use crate::ast::{get_xml_name, ElementDefault};
-use crate::xsd::{Schema, SchemaError};
-use inflector::Inflector;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, TokenStreamExt};
+use quote::{quote, TokenStreamExt};
+use xsd_internal::xsd::schema::{Schema, SchemaError};
 
 pub fn generate(item: &syn::ItemMod, path: impl AsRef<Path>) -> Result<TokenStream, SchemaError> {
     let schema = Schema::parse_file(path)?;
-    // TODO: derive from schema
-    let namespaces = HashMap::new();
-    let element_default = ElementDefault {
-        target_namespace: schema.target_namespace().map(|tn| tn.to_string()),
-        qualified: schema.qualified(),
-    };
     let mut structs = TokenStream::new();
 
-    let mut state = ();
-    for (name, el) in schema.elements() {
+    for name in schema.element_names() {
         // eprintln!("{:#?} {:#?}", name, el);
-
-        // TODO: handle duplicates with different prefixes
-        let name_ident = escape_ident(&name.name.to_pascal_case());
-        let kind = if el.is_enum() {
-            quote!(enum)
-        } else {
-            quote!(struct)
-        };
-        let declaration = &el.to_declaration(&name_ident, &mut state);
-        let docs = el
-            .docs()
-            .map(|docs| quote! { #[doc = #docs] })
-            .unwrap_or_else(TokenStream::new);
-
-        structs.append_all(quote! {
-            #docs
-            #[derive(Debug, Clone, PartialEq)]
-            pub #kind #name_ident#declaration
-        });
-
-        let to_xml = el.to_xml_impl(&element_default);
-
-        let name_xml = get_xml_name(&name, element_default.qualified);
-        let mut element_ns = Vec::new();
-        if let Some(tn) = schema.target_namespace() {
-            if schema.qualified() {
-                element_ns.push(quote! { .set_default_ns(#tn) });
-            } else {
-                element_ns.push(quote! { .set_ns("tn", #tn) });
-            }
-        }
-
-        structs.append_all(quote! {
-            impl #name_ident {
-                pub fn to_xml(&self) -> Result<Vec<u8>, ::xsd::xml::writer::Error> {
-                    use ::xsd::xml::writer::events::XmlEvent;
-
-                    let mut body = Vec::new();
-                    let mut writer = ::xsd::xml::writer::EmitterConfig::new()
-                        .perform_indent(true)
-                        .create_writer(&mut body);
-
-                    writer.write(XmlEvent::StartDocument {
-                        version: ::xsd::xml::common::XmlVersion::Version10,
-                        encoding: Some("UTF-8"),
-                        standalone: None,
-                    })?;
-                    let mut ctx = ::xsd::Context::new(#name_xml);
-                    self.to_xml_writer(ctx, &mut writer)?;
-
-                    Ok(body)
-                }
-
-                fn to_xml_writer<'a, 'b, W: ::std::io::Write>(
-                    &'a self,
-                    mut ctx: ::xsd::Context<'a, 'b>,
-                    writer: &mut ::xsd::xml::writer::EventWriter<W>,
-                ) -> Result<(), ::xsd::xml::writer::Error> {
-                    use ::xsd::xml::writer::events::XmlEvent;
-
-                    #(ctx#element_ns;)*
-                    #to_xml
-
-                    Ok(())
-                }
-            }
-        });
-
-        let name_xml = &name.name;
-        let namespace_xml = name.namespace.to_quote(&element_default);
-        let from_xml = el.from_xml_impl(&name_ident, &element_default, &namespaces);
-
-        structs.append_all(quote! {
-            impl #name_ident {
-                pub fn from_xml(input: impl AsRef<str>) -> Result<Self, ::xsd::decode::FromXmlError> {
-                    let doc = ::xsd::decode::decode(input.as_ref())?;
-                    let node = doc.try_child(#name_xml, #namespace_xml)?;
-                    Self::from_xml_node(&node)
-                }
-
-                fn from_xml_node(node: &::xsd::decode::Node) -> Result<Self, ::xsd::decode::FromXmlError> {
-                    Ok(#from_xml)
-                }
-            }
-        });
-
-        let lookahead = el.lookahead_impl(&element_default);
-
-        structs.append_all(quote! {
-            impl #name_ident {
-                fn lookahead(node: &::xsd::decode::Node) -> bool {
-                    #lookahead
-                }
-            }
-        });
+        structs.append_all(schema.generate_element(name)?);
     }
 
     let attrs = &item.attrs;
@@ -138,16 +34,4 @@ pub fn generate(item: &syn::ItemMod, path: impl AsRef<Path>) -> Result<TokenStre
 
     // eprintln!("{}", result.to_string());
     Ok(result)
-}
-
-pub fn escape_ident(name: &str) -> syn::Ident {
-    match name {
-        " break" | "const" | "continue" | "crate" | "else" | "enum" | "extern" | "false" | "fn"
-        | "for" | "if" | "impl" | "in" | "let" | "loop" | "match" | "mod" | "move" | "mut"
-        | "pub" | "ref" | "return" | "self" | "Self" | "static" | "struct" | "super" | "trait"
-        | "true" | "type" | "unsafe" | "use" | "where" | "while" | "async" | "await" | "dyn" => {
-            format_ident!("r#{}", name)
-        }
-        _ => format_ident!("{}", name),
-    }
 }

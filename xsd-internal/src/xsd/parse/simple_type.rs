@@ -4,8 +4,8 @@ use rust_decimal::Decimal;
 
 use crate::ast::{LeafContent, LeafDefinition, Name, Namespace, Restriction, Root};
 use crate::xsd::context::{Context, NS_XSD};
+use crate::xsd::error::XsdError;
 use crate::xsd::node::Node;
-use crate::xsd::XsdError;
 
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,

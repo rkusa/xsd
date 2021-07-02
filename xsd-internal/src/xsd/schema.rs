@@ -1,14 +1,18 @@
 use std::borrow::Cow;
 use std::fs::read_to_string;
 use std::io;
+use std::ops::Range;
 use std::{collections::HashMap, path::Path};
-
-use roxmltree::{Document, TextPos};
 
 use super::context::{Context, NS_XSD};
 use super::error::XsdError;
 use super::node::Node;
-use crate::ast::{Name, Namespace, Root};
+use crate::ast::{get_xml_name, ElementDefault, Name, Namespace, Root};
+use crate::utils::escape_ident;
+use inflector::Inflector;
+use proc_macro2::TokenStream;
+use quote::{quote, TokenStreamExt};
+use roxmltree::{Document, TextPos};
 
 pub struct Schema {
     elements: HashMap<Name, Root>,
@@ -67,7 +71,7 @@ impl Schema {
         })
     }
 
-    fn parse_schema(
+    pub fn parse_schema(
         root: &Node<'_, '_>,
         base_path: &Path,
         target_namespace: Option<&str>,
@@ -132,12 +136,132 @@ impl Schema {
         self.elements.iter()
     }
 
+    pub fn element_names(&self) -> impl Iterator<Item = &Name> {
+        self.elements.keys()
+    }
+
     pub fn target_namespace(&self) -> Option<&str> {
         self.target_namespace.as_deref()
     }
 
     pub fn qualified(&self) -> bool {
         self.qualified
+    }
+
+    pub fn generate_element(&self, name: &Name) -> Result<TokenStream, SchemaError> {
+        let el = self
+            .elements
+            .get(name)
+            .ok_or_else(|| SchemaError::NotFound {
+                name: name.name.clone(),
+            })?;
+
+        // TODO: derive from schema
+        let namespaces = HashMap::new();
+        let element_default = ElementDefault {
+            target_namespace: self.target_namespace().map(|tn| tn.to_string()),
+            qualified: self.qualified(),
+        };
+        let mut result = TokenStream::new();
+        let mut state = ();
+
+        // TODO: handle duplicates with different prefixes
+        let name_ident = escape_ident(&name.name.to_pascal_case());
+        let kind = if el.is_enum() {
+            quote!(enum)
+        } else {
+            quote!(struct)
+        };
+        let declaration = &el.to_declaration(&name_ident, &mut state);
+        let docs = el
+            .docs()
+            .map(|docs| quote! { #[doc = #docs] })
+            .unwrap_or_else(TokenStream::new);
+
+        result.append_all(quote! {
+            #docs
+            #[derive(Debug, Clone, PartialEq)]
+            pub #kind #name_ident#declaration
+        });
+
+        let to_xml = el.to_xml_impl(&element_default);
+
+        let name_xml = get_xml_name(&name, element_default.qualified);
+        let mut element_ns = Vec::new();
+        if let Some(tn) = self.target_namespace() {
+            if self.qualified() {
+                element_ns.push(quote! { .set_default_ns(#tn) });
+            } else {
+                element_ns.push(quote! { .set_ns("tn", #tn) });
+            }
+        }
+
+        result.append_all(quote! {
+            impl #name_ident {
+                pub fn to_xml(&self) -> Result<Vec<u8>, ::xsd::xml::writer::Error> {
+                    use ::xsd::xml::writer::events::XmlEvent;
+
+                    let mut body = Vec::new();
+                    let mut writer = ::xsd::xml::writer::EmitterConfig::new()
+                        .perform_indent(true)
+                        .create_writer(&mut body);
+
+                    writer.write(XmlEvent::StartDocument {
+                        version: ::xsd::xml::common::XmlVersion::Version10,
+                        encoding: Some("UTF-8"),
+                        standalone: None,
+                    })?;
+                    let mut ctx = ::xsd::Context::new(#name_xml);
+                    self.to_xml_writer(ctx, &mut writer)?;
+
+                    Ok(body)
+                }
+
+                fn to_xml_writer<'a, 'b, W: ::std::io::Write>(
+                    &'a self,
+                    mut ctx: ::xsd::Context<'a, 'b>,
+                    writer: &mut ::xsd::xml::writer::EventWriter<W>,
+                ) -> Result<(), ::xsd::xml::writer::Error> {
+                    use ::xsd::xml::writer::events::XmlEvent;
+
+                    #(ctx#element_ns;)*
+                    #to_xml
+
+                    Ok(())
+                }
+            }
+        });
+
+        let name_xml = &name.name;
+        let namespace_xml = name.namespace.to_quote(&element_default);
+        let from_xml = el.from_xml_impl(&name_ident, &element_default, &namespaces);
+
+        result.append_all(quote! {
+            impl #name_ident {
+                pub fn from_xml(input: impl AsRef<str>) -> Result<Self, ::xsd::decode::FromXmlError> {
+                    let doc = ::xsd::decode::decode(input.as_ref())?;
+                    let node = doc.try_child(#name_xml, #namespace_xml)?;
+                    Self::from_xml_node(&node)
+                }
+
+                fn from_xml_node(node: &::xsd::decode::Node) -> Result<Self, ::xsd::decode::FromXmlError> {
+                    Ok(#from_xml)
+                }
+            }
+        });
+
+        let lookahead = el.lookahead_impl(&element_default);
+
+        result.append_all(quote! {
+            impl #name_ident {
+                fn lookahead(node: &::xsd::decode::Node) -> bool {
+                    #lookahead
+                }
+            }
+        });
+
+        // eprintln!("{}", result.to_string());
+        Ok(result)
     }
 }
 
@@ -157,10 +281,12 @@ pub enum SchemaError {
         err: io::Error,
         file: String,
     },
+    #[error("Element {name} not found in schema")]
+    NotFound { name: String },
 }
 
 #[derive(Debug, thiserror::Error)]
-enum ParseError {
+pub enum ParseError {
     #[error("{0}")]
     Schema(#[from] SchemaError),
     #[error("{0}")]
@@ -170,5 +296,14 @@ enum ParseError {
 impl From<super::node::NodeError> for ParseError {
     fn from(err: super::node::NodeError) -> Self {
         ParseError::Xsd(err.into())
+    }
+}
+
+impl ParseError {
+    pub fn range(&self) -> Option<&Range<usize>> {
+        match self {
+            ParseError::Schema(_) => None,
+            ParseError::Xsd(err) => err.range(),
+        }
     }
 }

@@ -234,10 +234,22 @@ dependencies = [
  "thiserror",
  "xml-rs",
  "xsd-derive",
+ "xsd-internal",
 ]
 
 [[package]]
 name = "xsd-derive"
+version = "0.1.0"
+dependencies = [
+ "Inflector",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "xsd-internal",
+]
+
+[[package]]
+name = "xsd-internal"
 version = "0.1.0"
 dependencies = [
  "Inflector",

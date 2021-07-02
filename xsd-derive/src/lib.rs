@@ -1,8 +1,6 @@
 // #![allow(unused)]
 
-mod ast;
 mod generator;
-mod xsd;
 
 use std::env;
 use std::path::PathBuf;
