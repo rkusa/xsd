@@ -158,7 +158,13 @@ impl Root {
                     #inner
                 };
                 // TODO: improve those cases to make them easier to understand
-                if !matches!(def, LeafDefinition { content: LeafContent::Named(_), .. }) {
+                if !matches!(
+                    def,
+                    LeafDefinition {
+                        content: LeafContent::Named(_),
+                        ..
+                    }
+                ) {
                     quote! {
                         ctx.write_start_element(writer)?;
                         #tn

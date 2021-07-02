@@ -82,7 +82,13 @@ impl Leaf {
         }
 
         let wrap = !self.is_virtual
-            && !matches!(self.definition, LeafDefinition{content: LeafContent::Named(_),..});
+            && !matches!(
+                self.definition,
+                LeafDefinition {
+                    content: LeafContent::Named(_),
+                    ..
+                }
+            );
         if wrap {
             tn.append_all(quote! {
                 ctx.write_start_element(writer)?;

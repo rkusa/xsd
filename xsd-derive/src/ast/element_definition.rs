@@ -30,10 +30,13 @@ impl ElementDefinition {
         for attr in &self.attributes {
             ts.append_all(attr.to_xml_impl(element_default));
         }
-        let is_named_leaf = matches!(self.content, Some(ElementContent::Leaf(LeafDefinition {
-            content: LeafContent::Named(_),
-            ..
-        })));
+        let is_named_leaf = matches!(
+            self.content,
+            Some(ElementContent::Leaf(LeafDefinition {
+                content: LeafContent::Named(_),
+                ..
+            }))
+        );
         let wrap = !self.is_virtual && !is_named_leaf;
         if wrap {
             ts.append_all(quote! { ctx.write_start_element(writer)?; });
