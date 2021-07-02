@@ -21,11 +21,7 @@ where
         let variant = match child.name() {
             "element" => super::element::parse_child(child, parent, ctx)?,
             "sequence" => {
-                let docs = child
-                    .child("annotation", Some(NS_XSD))
-                    .map(super::annotation::parse)
-                    .transpose()?
-                    .flatten();
+                let docs = super::parse_annotation(child.child("annotation", Some(NS_XSD)))?;
 
                 let leaves = super::sequence::parse(child, parent, ctx)?;
                 let leaf_name =

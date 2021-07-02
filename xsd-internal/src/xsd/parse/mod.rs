@@ -12,6 +12,8 @@ pub mod simple_type;
 use inflector::Inflector;
 
 use super::context::Context;
+use super::error::XsdError;
+use super::node::Node;
 use crate::ast::Name;
 
 fn derive_virtual_name<'a, 'input, 'b>(
@@ -102,6 +104,10 @@ fn mutal_suffix(lhs: &str, rhs: &str) -> String {
         .into_iter()
         .rev()
         .collect()
+}
+
+fn parse_annotation(node: Option<Node<'_, '_>>) -> Result<Option<String>, XsdError> {
+    Ok(node.map(annotation::parse).transpose()?.flatten())
 }
 
 #[cfg(test)]

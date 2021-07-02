@@ -15,11 +15,7 @@ where
     'a: 'input,
 {
     let mut children = node.children().namespace(NS_XSD).collect();
-    let docs = children
-        .remove("annotation", Some(NS_XSD))
-        .map(super::annotation::parse)
-        .transpose()?
-        .flatten();
+    let docs = super::parse_annotation(children.remove("annotation", Some(NS_XSD)))?;
 
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {
@@ -84,11 +80,7 @@ where
     // TODO: implement attribute?
     node.attribute("form");
 
-    let docs = node
-        .child("annotation", Some(NS_XSD))
-        .map(super::annotation::parse)
-        .transpose()?
-        .flatten();
+    let docs = super::parse_annotation(node.child("annotation", Some(NS_XSD)))?;
 
     // <element type="xs:string" /> | <element type="MyCustomType" />
     if let Some(attr) = node.attribute("type") {

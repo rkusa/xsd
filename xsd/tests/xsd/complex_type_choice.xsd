@@ -1,12 +1,18 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:complexType name="User">
+    <xs:annotation>
+      <xs:documentation>An user.</xs:documentation>
+    </xs:annotation>
     <xs:attribute name="name" type="xs:string" use="required" />
   </xs:complexType>
   <xs:complexType name="Bot">
     <xs:attribute name="handle" type="xs:string" use="required" />
   </xs:complexType>
   <xs:complexType name="Author">
+    <xs:annotation>
+      <xs:documentation>An author.</xs:documentation>
+    </xs:annotation>
     <xs:choice>
       <xs:element name="user" type="User" />
       <xs:element name="bot" type="Bot" />
@@ -14,6 +20,9 @@
   </xs:complexType>
   <xs:element name="article">
     <xs:complexType>
+      <xs:annotation>
+        <xs:documentation>An article.</xs:documentation>
+      </xs:annotation>
       <xs:sequence>
         <xs:element name="createdBy" type="Author" />
         <xs:element name="postedBy">

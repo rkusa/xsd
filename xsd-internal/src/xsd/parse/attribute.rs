@@ -14,11 +14,7 @@ where
     let name = Name::new(node.try_attribute("name")?.value(), Namespace::None);
 
     let mut children = node.children().namespace(NS_XSD).collect();
-    let docs = children
-        .remove("annotation", Some(NS_XSD))
-        .map(super::annotation::parse)
-        .transpose()?
-        .flatten();
+    let docs = super::parse_annotation(children.remove("annotation", Some(NS_XSD)))?;
 
     let content = if let Some(child) = children.remove("simpleType", Some(NS_XSD)) {
         let root = super::simple_type::parse(child, ctx)?;

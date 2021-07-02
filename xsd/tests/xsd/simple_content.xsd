@@ -2,6 +2,9 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="text">
     <xs:complexType>
+      <xs:annotation>
+        <xs:documentation>A text snippet.</xs:documentation>
+      </xs:annotation>
       <xs:simpleContent>
         <xs:extension base="xs:string">
           <xs:attribute name="lang" type="xs:string" />

@@ -14,6 +14,13 @@ pub struct ElementDefinition {
 }
 
 impl ElementDefinition {
+    pub fn with_docs(mut self, docs: Option<String>) -> Self {
+        if docs.is_some() {
+            self.docs = docs
+        }
+        self
+    }
+
     pub fn to_impl(&self, state: &mut State) -> TokenStream {
         let mut ts = TokenStream::new();
         if let Some(content) = &self.content {

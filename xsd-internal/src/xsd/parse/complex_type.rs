@@ -27,19 +27,21 @@ where
     node.prevent_unvisited_attributes()?;
 
     let mut children = node.children().namespace(NS_XSD).collect();
+    let docs = super::parse_annotation(children.remove("annotation", Some(NS_XSD)))?;
     // TODO: (annotation?,(simpleContent|complexContent|)
-    // TODO: annotation
     // TODO: simpleContent xor complexContent xor the following
 
     if let Some(child) = children.remove("simpleContent", Some(NS_XSD)) {
-        return Ok(Root::Element(super::simple_content::parse(
-            child, parent, ctx,
-        )?));
+        children.prevent_unvisited_children()?;
+        return Ok(Root::Element(
+            super::simple_content::parse(child, parent, ctx)?.with_docs(docs),
+        ));
     }
     if let Some(child) = children.remove("complexContent", Some(NS_XSD)) {
-        return Ok(Root::Element(super::complex_content::parse(
-            child, parent, ctx,
-        )?));
+        children.prevent_unvisited_children()?;
+        return Ok(Root::Element(
+            super::complex_content::parse(child, parent, ctx)?.with_docs(docs),
+        ));
     }
 
     let content = if let Some(child) = children.remove("sequence", Some(NS_XSD)) {
@@ -77,10 +79,11 @@ where
         }
     } else if let Some(child) = children.remove("choice", Some(NS_XSD)) {
         let variants = super::choice::parse(child, parent, ctx)?;
+        children.prevent_unvisited_children()?;
         return Ok(Root::Choice(ChoiceDefinition {
             variants,
             is_virtual: false,
-            docs: None,
+            docs,
         }));
     } else {
         None
@@ -100,6 +103,6 @@ where
         attributes,
         content,
         is_virtual: false,
-        docs: None,
+        docs,
     }))
 }

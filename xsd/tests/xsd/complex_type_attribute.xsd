@@ -2,6 +2,9 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="article">
     <xs:complexType>
+      <xs:annotation>
+        <xs:documentation>An article.</xs:documentation>
+      </xs:annotation>
       <xs:sequence>
         <xs:element name="excerpt" type="xs:string" />
       </xs:sequence>

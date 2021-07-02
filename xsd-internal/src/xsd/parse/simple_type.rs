@@ -17,11 +17,7 @@ where
     node.prevent_unvisited_attributes()?;
 
     let mut children = node.children().namespace(NS_XSD).collect();
-    let docs = children
-        .remove("annotation", Some(NS_XSD))
-        .map(super::annotation::parse)
-        .transpose()?
-        .flatten();
+    let docs = super::parse_annotation(children.remove("annotation", Some(NS_XSD)))?;
 
     let restriction = children.try_remove("restriction", Some(NS_XSD))?;
 

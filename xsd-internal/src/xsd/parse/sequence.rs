@@ -52,11 +52,7 @@ where
                 }
             }
             "sequence" => {
-                let docs = child
-                    .child("annotation", Some(NS_XSD))
-                    .map(super::annotation::parse)
-                    .transpose()?
-                    .flatten();
+                let docs = super::parse_annotation(child.child("annotation", Some(NS_XSD)))?;
 
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
