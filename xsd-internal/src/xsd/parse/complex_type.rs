@@ -70,6 +70,7 @@ where
                     docs: None,
                 }),
             );
+            ctx.discover_type(&root_name, Some(parent));
 
             Some(ElementContent::Leaves(vec![Leaf {
                 name: leaf_name,

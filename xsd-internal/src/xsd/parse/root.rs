@@ -12,7 +12,7 @@ where
     'a: 'input,
 {
     match node.name() {
-        "element" => super::element::parse_root(node, ctx),
+        "element" => super::element::parse_root(node, parent, ctx),
         "complexType" => super::complex_type::parse(node, parent, ctx),
         "simpleType" => super::simple_type::parse(node, ctx),
         child_name => Err(XsdError::UnsupportedElement {

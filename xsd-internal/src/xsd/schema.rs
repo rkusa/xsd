@@ -349,7 +349,7 @@ pub enum SchemaError {
         err: io::Error,
         file: String,
     },
-    #[error("Element {name} not found in schema")]
+    #[error("Element `{name}` not found in schema")]
     NotFound { name: String },
 }
 

@@ -9,6 +9,7 @@ use crate::xsd::node::{Attribute, Node};
 
 pub fn parse_root<'a, 'input>(
     node: Node<'a, 'input>,
+    parent: &Name,
     ctx: &mut Context<'input>,
 ) -> Result<Root, XsdError>
 where
@@ -21,7 +22,7 @@ where
     if let Some(attr) = node.attribute("type") {
         let mut content = ctx.get_type_name(attr)?;
         match &mut content {
-            LeafContent::Named(name) => ctx.discover_type(name, None),
+            LeafContent::Named(name) => ctx.discover_type(name, Some(parent)),
             content @ LeafContent::Literal(_) => {
                 if let Some(attr) = node.attribute("fixed") {
                     *content = LeafContent::Fixed(attr.value().to_string());
@@ -42,9 +43,7 @@ where
         node.prevent_unvisited_attributes()?;
 
         let result = if let Some(child) = children.remove("complexType", Some(NS_XSD)) {
-            let name = node.try_attribute("name")?.value();
-            let name = ctx.get_node_name(&name, false);
-            super::complex_type::parse(child, &name, ctx)?
+            super::complex_type::parse(child, parent, ctx)?
         } else if let Some(child) = children.remove("simpleType", Some(NS_XSD)) {
             super::simple_type::parse(child, ctx)?
         } else {
@@ -164,8 +163,11 @@ where
             ctx,
             false,
         );
+
         let root = super::root::parse(node, &virtual_name, ctx)?;
         ctx.add_root(virtual_name.clone(), root);
+        ctx.discover_type(&virtual_name, Some(parent));
+
         Ok(Leaf {
             name,
             definition: LeafDefinition {

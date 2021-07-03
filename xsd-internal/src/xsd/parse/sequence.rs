@@ -40,6 +40,7 @@ where
                         docs: None,
                     }),
                 );
+                ctx.discover_type(&root_name, Some(parent));
 
                 Leaf {
                     name: leaf_name,
@@ -73,6 +74,7 @@ where
                         docs: None,
                     }),
                 );
+                ctx.discover_type(&root_name, Some(parent));
 
                 Leaf {
                     name: leaf_name,

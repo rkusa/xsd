@@ -58,6 +58,7 @@ where
                 docs: None,
             }),
         );
+        ctx.discover_type(&root_name, Some(parent));
 
         virtual_leaves.push(Leaf {
             name: leaf_name,

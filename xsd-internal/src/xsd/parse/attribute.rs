@@ -33,6 +33,7 @@ where
                 false,
             );
             ctx.add_root(virtual_name.clone(), root);
+            ctx.discover_type(&virtual_name, Some(parent));
 
             LeafContent::Named(virtual_name)
         }
