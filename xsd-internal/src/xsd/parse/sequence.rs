@@ -5,6 +5,7 @@ use crate::ast::{
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::error::XsdError;
 use crate::xsd::node::Node;
+use crate::xsd::parse::element::parse_max_occurs;
 
 use super::element::parse_min_occurs;
 
@@ -24,6 +25,7 @@ where
             "element" => super::element::parse_child(child, parent, ctx)?,
             "choice" => {
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
+                let max_occurs = parse_max_occurs(child.attribute("maxOccurs"))?;
 
                 let variants = super::choice::parse(child, parent, ctx)?;
                 let leaf_name =
@@ -49,7 +51,7 @@ where
                     is_unordered: false,
                     is_virtual: true,
                     min_occurs,
-                    max_occurs: MaxOccurs::default(),
+                    max_occurs,
                 }
             }
             "sequence" => {
