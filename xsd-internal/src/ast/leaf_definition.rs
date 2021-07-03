@@ -1,4 +1,4 @@
-use super::{LeafContent, State};
+use super::LeafContent;
 use proc_macro2::TokenStream;
 use rust_decimal::Decimal;
 
@@ -23,8 +23,8 @@ pub enum Restriction {
 }
 
 impl LeafDefinition {
-    pub fn to_impl(&self, state: &mut State) -> TokenStream {
-        self.content.to_impl(state)
+    pub fn to_impl(&self) -> TokenStream {
+        self.content.to_impl()
     }
 
     pub fn to_xml_impl(&self) -> TokenStream {

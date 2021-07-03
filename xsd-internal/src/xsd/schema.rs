@@ -179,11 +179,10 @@ impl Schema {
     }
 
     pub fn generate_all(&self) -> Result<TokenStream, SchemaError> {
-        let state = ();
         let mut result = TokenStream::new();
 
         for name in self.elements.keys() {
-            result.append_all(self.generate_element(name, state)?);
+            result.append_all(self.generate_element(name)?);
         }
 
         Ok(result)
@@ -194,7 +193,6 @@ impl Schema {
         name: &'a Name,
         already_generated: &mut HashSet<&'a Name>,
     ) -> Result<TokenStream, SchemaError> {
-        let state = ();
         let mut result = TokenStream::new();
 
         let mut names = HashSet::with_capacity(1);
@@ -225,14 +223,14 @@ impl Schema {
             if already_generated.contains(name) {
                 continue;
             }
-            result.append_all(self.generate_element(name, state)?);
+            result.append_all(self.generate_element(name)?);
             already_generated.insert(name);
         }
 
         Ok(result)
     }
 
-    fn generate_element(&self, name: &Name, mut state: ()) -> Result<TokenStream, SchemaError> {
+    fn generate_element(&self, name: &Name) -> Result<TokenStream, SchemaError> {
         let el = self
             .elements
             .get(name)
@@ -249,7 +247,7 @@ impl Schema {
         } else {
             quote!(struct)
         };
-        let declaration = &el.to_declaration(&name_ident, &mut state);
+        let declaration = &el.to_declaration(&name_ident);
         let docs = el
             .docs()
             .map(|docs| quote! { #[doc = #docs] })

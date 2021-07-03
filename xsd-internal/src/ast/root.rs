@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::xsd::context::SchemaContext;
 
-use super::{ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name, State};
+use super::{ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
@@ -49,10 +49,10 @@ impl Root {
         }
     }
 
-    pub fn to_declaration(&self, root_name: &Ident, state: &mut State) -> TokenStream {
+    pub fn to_declaration(&self, root_name: &Ident) -> TokenStream {
         match self {
             Root::Leaf(def) => {
-                let inner = def.to_impl(state);
+                let inner = def.to_impl();
                 let mut tn = quote! {
                     (pub #inner);
                 };
@@ -134,7 +134,7 @@ impl Root {
                 }
             }
             Root::Element(def) => {
-                let inner = def.to_impl(state);
+                let inner = def.to_impl();
                 quote! {
                     {
                         #inner
@@ -145,7 +145,7 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let type_name = variant.definition.to_impl(state);
+                    let type_name = variant.definition.to_impl();
                     quote! {
                         #variant_name(#type_name)
                     }

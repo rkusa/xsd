@@ -19,5 +19,3 @@ pub use literal_type::*;
 pub use name::*;
 pub use namespaces::*;
 pub use root::*;
-
-pub type State = ();

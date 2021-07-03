@@ -1,4 +1,3 @@
-use super::State;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -43,7 +42,7 @@ impl LiteralType {
 }
 
 impl LiteralType {
-    pub fn to_impl(&self, _state: &mut State) -> TokenStream {
+    pub fn to_impl(&self) -> TokenStream {
         use LiteralType::*;
         match self {
             String => quote! { String },

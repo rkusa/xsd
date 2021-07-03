@@ -1,6 +1,5 @@
 use crate::utils::escape_ident;
 
-use super::State;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -31,7 +30,7 @@ impl Name {
         }
     }
 
-    pub fn to_impl(&self, _state: &mut State) -> TokenStream {
+    pub fn to_impl(&self) -> TokenStream {
         let name_ident = escape_ident(&self.name.to_pascal_case());
         quote!(#name_ident)
     }

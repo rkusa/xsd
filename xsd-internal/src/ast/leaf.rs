@@ -1,4 +1,4 @@
-use super::{LeafContent, LeafDefinition, Name, State};
+use super::{LeafContent, LeafDefinition, Name};
 use crate::utils::escape_ident;
 use crate::xsd::context::SchemaContext;
 use inflector::Inflector;
@@ -45,9 +45,9 @@ impl Leaf {
         }
     }
 
-    pub fn to_impl(&self, state: &mut State) -> TokenStream {
+    pub fn to_impl(&self) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
-        let mut type_ident = self.definition.to_impl(state);
+        let mut type_ident = self.definition.to_impl();
         if self.is_vec() {
             type_ident = quote! { Vec<#type_ident> }
         }

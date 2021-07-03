@@ -1,4 +1,4 @@
-use super::{LiteralType, Name, State};
+use super::{LiteralType, Name};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -10,10 +10,10 @@ pub enum LeafContent {
 }
 
 impl LeafContent {
-    pub fn to_impl(&self, state: &mut State) -> TokenStream {
+    pub fn to_impl(&self) -> TokenStream {
         match self {
-            LeafContent::Literal(literal) => literal.to_impl(state),
-            LeafContent::Named(name) => name.to_impl(state),
+            LeafContent::Literal(literal) => literal.to_impl(),
+            LeafContent::Named(name) => name.to_impl(),
             LeafContent::Fixed(_) => quote!(()),
         }
     }

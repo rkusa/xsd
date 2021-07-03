@@ -1,6 +1,6 @@
 use crate::xsd::context::SchemaContext;
 
-use super::{Attribute, ElementContent, LeafContent, LeafDefinition, State};
+use super::{Attribute, ElementContent, LeafContent, LeafDefinition};
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
@@ -21,13 +21,13 @@ impl ElementDefinition {
         self
     }
 
-    pub fn to_impl(&self, state: &mut State) -> TokenStream {
+    pub fn to_impl(&self) -> TokenStream {
         let mut ts = TokenStream::new();
         if let Some(content) = &self.content {
-            ts.append_all(content.to_impl(state));
+            ts.append_all(content.to_impl());
         }
         for attr in &self.attributes {
-            ts.append_all(attr.to_impl(state));
+            ts.append_all(attr.to_impl());
         }
         ts
     }

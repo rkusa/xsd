@@ -1,6 +1,6 @@
 use crate::xsd::context::SchemaContext;
 
-use super::{Leaf, LeafDefinition, State};
+use super::{Leaf, LeafDefinition};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -11,7 +11,7 @@ pub enum ElementContent {
 }
 
 impl ElementContent {
-    pub fn to_impl(&self, state: &mut State) -> TokenStream {
+    pub fn to_impl(&self) -> TokenStream {
         match self {
             ElementContent::Leaf(leaf) => {
                 let docs = leaf
@@ -19,7 +19,7 @@ impl ElementContent {
                     .as_ref()
                     .map(|docs| quote! { #[doc = #docs] })
                     .unwrap_or_else(TokenStream::new);
-                let inner = leaf.to_impl(state);
+                let inner = leaf.to_impl();
                 // TODO: prevent collisions between the randomly chosen `pub value_` and attributes that
                 // are possibly named `pub value_`
                 quote! {
@@ -28,10 +28,7 @@ impl ElementContent {
                 }
             }
             ElementContent::Leaves(leaves) => {
-                let properties = leaves
-                    .iter()
-                    .map(|el| el.to_impl(state))
-                    .collect::<Vec<_>>();
+                let properties = leaves.iter().map(|el| el.to_impl()).collect::<Vec<_>>();
                 quote!(#(#properties,)*)
             }
         }
