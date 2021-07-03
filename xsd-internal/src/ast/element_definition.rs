@@ -21,10 +21,10 @@ impl ElementDefinition {
         self
     }
 
-    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
+    pub fn to_impl(&self) -> TokenStream {
         let mut ts = TokenStream::new();
         if let Some(content) = &self.content {
-            ts.append_all(content.to_impl(ctx));
+            ts.append_all(content.to_impl());
         }
         for attr in &self.attributes {
             ts.append_all(attr.to_impl());
