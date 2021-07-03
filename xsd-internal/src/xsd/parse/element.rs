@@ -69,10 +69,38 @@ pub fn parse_child<'a, 'input>(
 where
     'a: 'input,
 {
-    let name = ctx.get_node_name(&node.try_attribute("name")?.value(), false);
-
     let min_occurs = parse_min_occurs(node.attribute("minOccurs"))?;
     let max_occurs = parse_max_occurs(node.attribute("maxOccurs"))?;
+
+    // <element ref="other:Type" />
+    if let Some(attr) = node.attribute("ref") {
+        node.prevent_unvisited_attributes()?;
+        if let LeafContent::Named(name) = ctx.get_type_name(attr)? {
+            ctx.discover_type(&name, Some(parent));
+            let definition = ctx
+                .resolve_ref(&name)
+                .ok_or_else(|| XsdError::UnresolvedRef {
+                    name: name.name.clone(),
+                    range: attr.range(),
+                })?;
+            return Ok(Leaf {
+                name,
+                definition,
+                is_virtual: false,
+                min_occurs,
+                max_occurs,
+            });
+        } else {
+            return Err(XsdError::UnsupportedAttributeValue {
+                name: "ref".to_string(),
+                value: attr.value().to_string(),
+                element: "element".to_string(),
+                range: attr.range(),
+            });
+        }
+    }
+
+    let name = ctx.get_node_name(&node.try_attribute("name")?.value(), false);
 
     // mark `default` attribute as visited
     node.attribute("default");

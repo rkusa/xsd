@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="urn:main" xmlns:main="urn:main" xmlns:base="urn:base">
+	<xs:import namespace="urn:base" schemaLocation="./element_ref_other.xsd"/>
+  <xs:complexType name="ArticleType">
+    <xs:sequence>
+      <xs:element ref="base:content" minOccurs="0" maxOccurs="1" />
+      <xs:element ref="main:author" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="article" type="main:ArticleType" />
+  <xs:element name="author" type="xs:string" />
+</xs:schema>

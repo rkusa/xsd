@@ -33,6 +33,15 @@ impl Namespaces {
         Namespace::Id(id)
     }
 
+    pub fn get(&self, namespace: &str) -> Namespace {
+        Namespace::Id(
+            *self
+                .by_namespace
+                .get(namespace)
+                .expect("namespace does not exist"),
+        )
+    }
+
     pub fn get_by_id(&self, id: usize) -> &NamespaceDefinition {
         self.by_id
             .get(&id)

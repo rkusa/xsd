@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::error::XsdError;
 use super::node::Attribute;
 use super::schema::Schema;
-use crate::ast::{LeafContent, LiteralType, Name, Namespace, Namespaces, Root};
+use crate::ast::{LeafContent, LeafDefinition, LiteralType, Name, Namespace, Namespaces, Root};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -122,8 +122,6 @@ impl<'input> Context<'input> {
                             range: attr.range(),
                         },
                     )?))
-                } else if let Namespace::Id(id) = self.target_namespace {
-                    Ok(LeafContent::Named(Name::new(name, Namespace::Id(id))))
                 } else {
                     Ok(LeafContent::Named(Name::new(
                         name,
@@ -148,6 +146,13 @@ impl<'input> Context<'input> {
 
     pub fn target_namespace(&self) -> Namespace {
         self.target_namespace
+    }
+
+    pub fn resolve_ref(&self, name: &Name) -> Option<LeafDefinition> {
+        match self.roots.get(name) {
+            Some(Root::Leaf(def)) => Some(def.clone()),
+            _ => None,
+        }
     }
 }
 

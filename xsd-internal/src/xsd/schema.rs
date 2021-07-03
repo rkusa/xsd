@@ -121,6 +121,9 @@ impl Schema {
             shared.unwrap_or_default(),
         );
 
+        // first iteration: parse include, import and element nodes first (`element`s are part of
+        // the first iteration to increase the chance to dicover them before we encounter any
+        // `ref`s)
         for child in root.children().namespace(NS_XSD).iter() {
             // TODO: prevent circular includes
             if child.name() == "include" || child.name() == "import" {
@@ -139,11 +142,23 @@ impl Schema {
                 continue;
             }
 
-            let name = Name::new(
-                child.try_attribute("name")?.value(),
-                // Root elements and types are qualified to the target namespace if there is one
-                ctx.target_namespace(),
-            );
+            if child.name() != "element" {
+                continue;
+            }
+
+            let name = Name::new(child.try_attribute("name")?.value(), ctx.target_namespace());
+
+            let root = crate::xsd::parse::root::parse(child, &name, &mut ctx)?;
+            ctx.add_root(name, root);
+        }
+
+        // second iteration: anything except include, import and element nodes
+        for child in root.children().namespace(NS_XSD).iter() {
+            if matches!(child.name(), "include" | "import" | "element") {
+                continue;
+            }
+
+            let name = Name::new(child.try_attribute("name")?.value(), ctx.target_namespace());
 
             let root = crate::xsd::parse::root::parse(child, &name, &mut ctx)?;
             ctx.add_root(name, root);
@@ -332,6 +347,10 @@ impl Schema {
 
         // eprintln!("{}", result.to_string());
         Ok(result)
+    }
+
+    pub fn context(&self) -> &SchemaContext {
+        &self.context
     }
 }
 

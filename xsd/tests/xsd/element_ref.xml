@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="urn:main" xmlns:ns2="urn:base">
+  <ns2:content>
+    <ns2:excerpt>Lorem Ipsum</ns2:excerpt>
+  </ns2:content>
+  <author>Foobar</author>
+</article>

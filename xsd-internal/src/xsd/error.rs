@@ -51,6 +51,10 @@ pub enum XsdError {
     },
     #[error("Unsupported XSD type {name}")]
     UnsupportedType { name: String, range: Range<usize> },
+    #[error(
+        "failed to resolve element ref `{name}` (target does not exist, or hasn't been parsed yet)"
+    )]
+    UnresolvedRef { name: String, range: Range<usize> },
 }
 
 impl XsdError {
@@ -69,6 +73,7 @@ impl XsdError {
             XsdError::ParseInt { range, .. } => Some(range),
             XsdError::ParseDecimal { range, .. } => Some(range),
             XsdError::UnsupportedType { range, .. } => Some(range),
+            XsdError::UnresolvedRef { range, .. } => Some(range),
         }
     }
 }
