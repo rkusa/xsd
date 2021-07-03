@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::ops::Range;
 
 use thiserror::Error;
@@ -41,6 +42,7 @@ pub struct Node<'a> {
 
 struct Children<'a> {
     children: Box<dyn Iterator<Item = roxmltree::Node<'a, 'a>> + 'a>,
+    peeked: VecDeque<roxmltree::Node<'a, 'a>>,
     next: Option<roxmltree::Node<'a, 'a>>,
 }
 
@@ -74,6 +76,7 @@ impl<'a> Node<'a> {
         Node {
             children: RefCell::new(Children {
                 children: Box::new(node.children().filter(|c| c.is_element())),
+                peeked: VecDeque::new(),
                 next: None,
             }),
             node,
@@ -83,7 +86,10 @@ impl<'a> Node<'a> {
     pub fn peek_child(&self, name: &str, namespace: Option<&str>) -> bool {
         let mut children = self.children.borrow_mut();
         if children.next.is_none() {
-            children.next = children.children.next();
+            children.next = children
+                .peeked
+                .pop_front()
+                .or_else(|| children.children.next());
         }
         if let Some(next) = &children.next {
             let tag_name = next.tag_name();
@@ -94,7 +100,12 @@ impl<'a> Node<'a> {
 
     pub fn next_child(&self, name: &str, namespace: Option<&str>) -> Option<Node<'_>> {
         let mut children = self.children.borrow_mut();
-        if let Some(next) = children.next.take().or_else(|| children.children.next()) {
+        if let Some(next) = children
+            .next
+            .take()
+            .or_else(|| children.peeked.pop_front())
+            .or_else(|| children.children.next())
+        {
             let tag_name = next.tag_name();
             if tag_name.name() == name && tag_name.namespace() == namespace {
                 return Some(Node::new(next));
@@ -110,6 +121,42 @@ impl<'a> Node<'a> {
         namespace: Option<&str>,
     ) -> Result<Node<'_>, FromXmlError> {
         self.next_child(name, namespace)
+            .ok_or_else(|| FromXmlError::MissingElement {
+                name: name.to_string(),
+                namespace: namespace.map(String::from),
+            })
+    }
+
+    pub fn child(&self, name: &str, namespace: Option<&str>) -> Option<Node<'_>> {
+        let mut children = self.children.borrow_mut();
+        if let Some(next) = children.next.take() {
+            let tag_name = next.tag_name();
+            if tag_name.name() == name && tag_name.namespace() == namespace {
+                return Some(Node::new(next));
+            }
+            children.next = Some(next)
+        }
+
+        for (ix, child) in children.peeked.iter().enumerate() {
+            let tag_name = child.tag_name();
+            if tag_name.name() == name && tag_name.namespace() == namespace {
+                return children.peeked.remove(ix).map(Node::new);
+            }
+        }
+
+        while let Some(child) = children.children.next() {
+            let tag_name = child.tag_name();
+            if tag_name.name() == name && tag_name.namespace() == namespace {
+                return Some(Node::new(child));
+            }
+            children.peeked.push_back(child);
+        }
+
+        None
+    }
+
+    pub fn try_child(&self, name: &str, namespace: Option<&str>) -> Result<Node<'_>, FromXmlError> {
+        self.child(name, namespace)
             .ok_or_else(|| FromXmlError::MissingElement {
                 name: name.to_string(),
                 namespace: namespace.map(String::from),

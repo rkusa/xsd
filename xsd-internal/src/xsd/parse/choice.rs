@@ -49,6 +49,7 @@ where
                         restrictions: Vec::new(),
                         docs,
                     }),
+                    is_unordered: false,
                     is_virtual: true,
                     min_occurs: MinOccurs::default(),
                     max_occurs: MaxOccurs::default(),

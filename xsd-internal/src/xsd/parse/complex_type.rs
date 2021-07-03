@@ -44,10 +44,18 @@ where
         ));
     }
 
-    let content = if let Some(child) = children.remove("sequence", Some(NS_XSD)) {
-        // TODO: or all, choice
+    let content = if let Some(child) = children
+        .remove("sequence", Some(NS_XSD))
+        .or_else(|| children.remove("all", Some(NS_XSD)))
+    {
+        let is_unordered = child.name() == "all";
         let max_occurs = parse_max_occurs(child.attribute("maxOccurs"))?;
-        let leaves = super::sequence::parse(child, parent, ctx)?;
+        let mut leaves = super::sequence::parse(child, parent, ctx)?;
+        if is_unordered {
+            for leaf in &mut leaves {
+                leaf.is_unordered = true;
+            }
+        }
 
         if max_occurs.is_vec() {
             let leaf_name = super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
@@ -70,6 +78,7 @@ where
                     restrictions: Vec::new(),
                     docs: None,
                 }),
+                is_unordered: false,
                 is_virtual: true,
                 min_occurs: MinOccurs::default(),
                 max_occurs,

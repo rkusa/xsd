@@ -9,6 +9,7 @@ use quote::{format_ident, quote, TokenStreamExt};
 pub struct Leaf {
     pub name: Name,
     pub definition: LeafType,
+    pub is_unordered: bool,
     pub is_virtual: bool,
     pub min_occurs: MinOccurs,
     pub max_occurs: MaxOccurs,
@@ -221,6 +222,11 @@ impl Leaf {
                     } else {
                         None
                     }
+                }
+            } else if self.is_unordered {
+                quote! {
+                    let node = node.try_child(#name_xml, #namespace_xml)?;
+                    #value
                 }
             } else {
                 quote! {
