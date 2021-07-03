@@ -1,6 +1,6 @@
 use crate::ast::{
     ChoiceDefinition, ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition,
-    MaxOccurs, Name, Root,
+    LeafType, MaxOccurs, Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::error::XsdError;
@@ -41,11 +41,11 @@ where
 
                 Leaf {
                     name: leaf_name,
-                    definition: LeafDefinition {
+                    definition: LeafType::Leaf(LeafDefinition {
                         content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
                         docs: None,
-                    },
+                    }),
                     is_virtual: true,
                     min_occurs,
                     max_occurs: MaxOccurs::default(),
@@ -73,11 +73,11 @@ where
 
                 Leaf {
                     name: leaf_name,
-                    definition: LeafDefinition {
+                    definition: LeafType::Leaf(LeafDefinition {
                         content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
                         docs,
-                    },
+                    }),
                     is_virtual: true,
                     min_occurs,
                     max_occurs: MaxOccurs::default(),

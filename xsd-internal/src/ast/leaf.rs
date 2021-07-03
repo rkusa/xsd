@@ -8,10 +8,16 @@ use quote::{format_ident, quote, TokenStreamExt};
 #[derive(Debug, Clone)]
 pub struct Leaf {
     pub name: Name,
-    pub definition: LeafDefinition,
+    pub definition: LeafType,
     pub is_virtual: bool,
     pub min_occurs: MinOccurs,
     pub max_occurs: MaxOccurs,
+}
+
+#[derive(Debug, Clone)]
+pub enum LeafType {
+    Ref,
+    Leaf(LeafDefinition),
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -45,17 +51,27 @@ impl Leaf {
         }
     }
 
-    pub fn to_impl(&self) -> TokenStream {
+    pub fn definition<'a>(&'a self, ctx: &'a SchemaContext) -> &'a LeafDefinition {
+        match &self.definition {
+            LeafType::Ref => match ctx.resolve_ref(&self.name) {
+                Some(definition) => definition,
+                None => panic!("Missing element (ref) `{}`", self.name.name),
+            },
+            LeafType::Leaf(definition) => definition,
+        }
+    }
+
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
-        let mut type_ident = self.definition.to_impl();
+        let definition = self.definition(ctx);
+        let mut type_ident = definition.to_impl();
         if self.is_vec() {
             type_ident = quote! { Vec<#type_ident> }
         }
         if self.is_optional() {
             type_ident = quote! { Option<#type_ident> }
         }
-        let docs = self
-            .definition
+        let docs = definition
             .docs
             .as_ref()
             .map(|docs| quote! { #[doc = #docs] })
@@ -69,7 +85,8 @@ impl Leaf {
     pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = ctx.get_xml_element_name(&self.name);
-        let inner = self.definition.to_xml_impl();
+        let definition = self.definition(ctx);
+        let inner = definition.to_xml_impl();
 
         let mut tn = TokenStream::new();
         if self.is_virtual {
@@ -84,7 +101,7 @@ impl Leaf {
 
         let wrap = !self.is_virtual
             && !matches!(
-                self.definition,
+                definition,
                 LeafDefinition {
                     content: LeafContent::Named(_),
                     ..
@@ -127,15 +144,16 @@ impl Leaf {
         }
     }
 
-    pub fn from_xml_impl(&self, context: &SchemaContext) -> TokenStream {
+    pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
-        let namespace_xml = context.quote_xml_namespace(&self.name);
-        let mut value = self.definition.from_xml_impl();
+        let namespace_xml = ctx.quote_xml_namespace(&self.name);
+        let definition = self.definition(ctx);
+        let mut value = definition.from_xml_impl();
 
         if self.is_virtual {
             if self.is_optional() {
-                let name = if let LeafContent::Named(name) = &self.definition.content {
+                let name = if let LeafContent::Named(name) = &definition.content {
                     name
                 } else {
                     // unreachable  ...
@@ -152,7 +170,7 @@ impl Leaf {
                     }
                 };
             } else if self.is_vec() {
-                let name = if let LeafContent::Named(name) = &self.definition.content {
+                let name = if let LeafContent::Named(name) = &definition.content {
                     name
                 } else {
                     // unreachable  ...

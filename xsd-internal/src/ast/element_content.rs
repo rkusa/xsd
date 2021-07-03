@@ -11,7 +11,7 @@ pub enum ElementContent {
 }
 
 impl ElementContent {
-    pub fn to_impl(&self) -> TokenStream {
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             ElementContent::Leaf(leaf) => {
                 let docs = leaf
@@ -28,7 +28,7 @@ impl ElementContent {
                 }
             }
             ElementContent::Leaves(leaves) => {
-                let properties = leaves.iter().map(|el| el.to_impl()).collect::<Vec<_>>();
+                let properties = leaves.iter().map(|el| el.to_impl(ctx)).collect::<Vec<_>>();
                 quote!(#(#properties,)*)
             }
         }

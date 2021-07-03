@@ -1,6 +1,6 @@
 use crate::ast::{
     ChoiceDefinition, ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition,
-    MinOccurs, Name, Root,
+    LeafType, MinOccurs, Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::error::XsdError;
@@ -65,11 +65,11 @@ where
 
             Some(ElementContent::Leaves(vec![Leaf {
                 name: leaf_name,
-                definition: LeafDefinition {
+                definition: LeafType::Leaf(LeafDefinition {
                     content: LeafContent::Named(root_name),
                     restrictions: Vec::new(),
                     docs: None,
-                },
+                }),
                 is_virtual: true,
                 min_occurs: MinOccurs::default(),
                 max_occurs,

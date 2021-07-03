@@ -28,6 +28,7 @@ pub struct SharedContext {
 
 /// The context reduced to the data necessary for the code-generation.
 pub struct SchemaContext {
+    pub elements: HashMap<Name, Root>,
     pub target_namespace: Namespace,
     pub is_qualified: bool,
     pub namespaces: Namespaces,
@@ -75,9 +76,9 @@ impl<'input> Context<'input> {
             context: SchemaContext {
                 target_namespace: self.target_namespace(),
                 is_qualified: self.is_qualified,
+                elements: self.roots,
                 namespaces: self.shared.namespaces,
             },
-            elements: self.roots,
             dependencies: self.shared.dependencies,
         }
     }
@@ -147,13 +148,6 @@ impl<'input> Context<'input> {
     pub fn target_namespace(&self) -> Namespace {
         self.target_namespace
     }
-
-    pub fn resolve_ref(&self, name: &Name) -> Option<LeafDefinition> {
-        match self.roots.get(name) {
-            Some(Root::Leaf(def)) => Some(def.clone()),
-            _ => None,
-        }
-    }
 }
 
 impl SchemaContext {
@@ -179,6 +173,13 @@ impl SchemaContext {
                 let ns = &ns.namespace;
                 quote!(Some(#ns))
             }
+        }
+    }
+
+    pub fn resolve_ref(&self, name: &Name) -> Option<&LeafDefinition> {
+        match self.elements.get(name) {
+            Some(Root::Leaf(def)) => Some(def),
+            _ => None,
         }
     }
 }

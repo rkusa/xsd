@@ -1,6 +1,6 @@
 use crate::ast::{
-    ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, MaxOccurs, MinOccurs,
-    Name, Root,
+    ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, LeafType, MaxOccurs,
+    MinOccurs, Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::error::XsdError;
@@ -61,11 +61,11 @@ where
 
         virtual_leaves.push(Leaf {
             name: leaf_name,
-            definition: LeafDefinition {
+            definition: LeafType::Leaf(LeafDefinition {
                 content: LeafContent::Named(root_name),
                 restrictions: Vec::new(),
                 docs: None,
-            },
+            }),
             is_virtual: true,
             min_occurs,
             max_occurs: MaxOccurs::default(),
@@ -94,11 +94,11 @@ where
         } else {
             let mut leaves = vec![Leaf {
                 name: ctx.get_node_name("base", false),
-                definition: LeafDefinition {
+                definition: LeafType::Leaf(LeafDefinition {
                     content,
                     restrictions: Vec::new(),
                     docs: None,
-                },
+                }),
                 is_virtual: true,
                 min_occurs: MinOccurs::default(),
                 max_occurs: MaxOccurs::default(),

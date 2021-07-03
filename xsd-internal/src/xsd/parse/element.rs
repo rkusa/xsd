@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::ast::{
-    Leaf, LeafContent, LeafDefinition, LiteralType, MaxOccurs, MinOccurs, Name, Root,
+    Leaf, LeafContent, LeafDefinition, LeafType, LiteralType, MaxOccurs, MinOccurs, Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::error::XsdError;
@@ -77,15 +77,9 @@ where
         node.prevent_unvisited_attributes()?;
         if let LeafContent::Named(name) = ctx.get_type_name(attr)? {
             ctx.discover_type(&name, Some(parent));
-            let definition = ctx
-                .resolve_ref(&name)
-                .ok_or_else(|| XsdError::UnresolvedRef {
-                    name: name.name.clone(),
-                    range: attr.range(),
-                })?;
             return Ok(Leaf {
                 name,
-                definition,
+                definition: crate::ast::LeafType::Ref,
                 is_virtual: false,
                 min_occurs,
                 max_occurs,
@@ -127,11 +121,11 @@ where
 
         Ok(Leaf {
             name,
-            definition: LeafDefinition {
+            definition: LeafType::Leaf(LeafDefinition {
                 content,
                 restrictions: Vec::new(),
                 docs,
-            },
+            }),
             is_virtual: false,
             min_occurs,
             max_occurs,
@@ -144,11 +138,11 @@ where
         // TODO: add test for that case
         Ok(Leaf {
             name,
-            definition: LeafDefinition {
+            definition: LeafType::Leaf(LeafDefinition {
                 content: LeafContent::Literal(LiteralType::Any),
                 restrictions: Vec::new(),
                 docs,
-            },
+            }),
             is_virtual: false,
             min_occurs,
             max_occurs,
@@ -166,11 +160,11 @@ where
         ctx.add_root(virtual_name.clone(), root);
         Ok(Leaf {
             name,
-            definition: LeafDefinition {
+            definition: LeafType::Leaf(LeafDefinition {
                 content: LeafContent::Named(virtual_name),
                 restrictions: Vec::new(),
                 docs,
-            },
+            }),
             is_virtual: false,
             min_occurs,
             max_occurs,

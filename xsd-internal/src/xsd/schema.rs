@@ -16,7 +16,6 @@ use quote::{quote, TokenStreamExt};
 use roxmltree::{Document, TextPos};
 
 pub struct Schema {
-    pub(crate) elements: HashMap<Name, Root>,
     pub(crate) dependencies: HashMap<Name, HashSet<Name>>,
     pub(crate) context: SchemaContext,
 }
@@ -121,9 +120,6 @@ impl Schema {
             shared.unwrap_or_default(),
         );
 
-        // first iteration: parse include, import and element nodes first (`element`s are part of
-        // the first iteration to increase the chance to dicover them before we encounter any
-        // `ref`s)
         for child in root.children().namespace(NS_XSD).iter() {
             // TODO: prevent circular includes
             if child.name() == "include" || child.name() == "import" {
@@ -134,27 +130,11 @@ impl Schema {
 
                 // merge imports
                 let mut schema = Schema::parse_file_with_context(path, Some(ctx.take_shared()))?;
-                for (name, root) in std::mem::take(&mut schema.elements) {
+                for (name, root) in std::mem::take(&mut schema.context.elements) {
                     ctx.add_root(name, root);
                 }
                 ctx.set_shared(schema.into_shared());
 
-                continue;
-            }
-
-            if child.name() != "element" {
-                continue;
-            }
-
-            let name = Name::new(child.try_attribute("name")?.value(), ctx.target_namespace());
-
-            let root = crate::xsd::parse::root::parse(child, &name, &mut ctx)?;
-            ctx.add_root(name, root);
-        }
-
-        // second iteration: anything except include, import and element nodes
-        for child in root.children().namespace(NS_XSD).iter() {
-            if matches!(child.name(), "include" | "import" | "element") {
                 continue;
             }
 
@@ -175,13 +155,13 @@ impl Schema {
     }
 
     pub fn elements(&self) -> impl Iterator<Item = (&Name, &Root)> {
-        self.elements.iter()
+        self.context.elements.iter()
     }
 
     pub fn generate_all(&self) -> Result<TokenStream, SchemaError> {
         let mut result = TokenStream::new();
 
-        for name in self.elements.keys() {
+        for name in self.context.elements.keys() {
             result.append_all(self.generate_element(name)?);
         }
 
@@ -232,6 +212,7 @@ impl Schema {
 
     fn generate_element(&self, name: &Name) -> Result<TokenStream, SchemaError> {
         let el = self
+            .context
             .elements
             .get(name)
             .ok_or_else(|| SchemaError::NotFound {
@@ -247,7 +228,7 @@ impl Schema {
         } else {
             quote!(struct)
         };
-        let declaration = &el.to_declaration(&name_ident);
+        let declaration = &el.to_declaration(&name_ident, &self.context);
         let docs = el
             .docs()
             .map(|docs| quote! { #[doc = #docs] })

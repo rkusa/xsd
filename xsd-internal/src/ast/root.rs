@@ -49,7 +49,7 @@ impl Root {
         }
     }
 
-    pub fn to_declaration(&self, root_name: &Ident) -> TokenStream {
+    pub fn to_declaration(&self, root_name: &Ident, ctx: &SchemaContext) -> TokenStream {
         match self {
             Root::Leaf(def) => {
                 let inner = def.to_impl();
@@ -134,7 +134,7 @@ impl Root {
                 }
             }
             Root::Element(def) => {
-                let inner = def.to_impl();
+                let inner = def.to_impl(ctx);
                 quote! {
                     {
                         #inner
@@ -145,7 +145,8 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let type_name = variant.definition.to_impl();
+                    let definition = variant.definition(ctx);
+                    let type_name = definition.to_impl();
                     quote! {
                         #variant_name(#type_name)
                     }
@@ -205,8 +206,9 @@ impl Root {
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
                     let name_xml = &variant.name.name;
-                    let inner = variant.definition.to_xml_impl();
-                    let is_literal = matches!(variant.definition.content, LeafContent::Literal(_));
+                    let definition = variant.definition(ctx);
+                    let inner = definition.to_xml_impl();
+                    let is_literal = matches!(definition.content, LeafContent::Literal(_));
                     let inner = if is_literal {
                         quote! {
                             ctx.write_start_element(writer)?;
@@ -269,11 +271,12 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let inner = variant.definition.from_xml_impl();
+                    let definition = variant.definition(ctx);
+                    let inner = definition.from_xml_impl();
                     let name_xml = &variant.name.name;
                     let namespace_xml = ctx.quote_xml_namespace(&variant.name);
                     if variant.is_virtual {
-                        if let LeafContent::Named(name) = &variant.definition.content {
+                        if let LeafContent::Named(name) = &definition.content {
                             let first_name = format_ident!("{}", name.name.to_pascal_case());
                             quote! {
                                 if #first_name::lookahead(node) {
@@ -331,7 +334,8 @@ impl Root {
                         *prev_required = !leaf.is_optional();
 
                         if leaf.is_virtual {
-                            let name = if let LeafContent::Named(name) = &leaf.definition.content {
+                            let definition = leaf.definition(ctx);
+                            let name = if let LeafContent::Named(name) = &definition.content {
                                 name
                             } else {
                                 // unreachable  ...
@@ -363,7 +367,8 @@ impl Root {
             Root::Choice(ChoiceDefinition { variants, .. }) => {
                 let checks = variants.iter().map(|variant| {
                     if variant.is_virtual {
-                        let name = if let LeafContent::Named(name) = &variant.definition.content {
+                        let definition = variant.definition(ctx);
+                        let name = if let LeafContent::Named(name) = &definition.content {
                             name
                         } else {
                             // unreachable  ...
