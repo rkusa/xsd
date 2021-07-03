@@ -11,7 +11,7 @@ pub enum ElementContent {
 }
 
 impl ElementContent {
-    pub fn to_impl(&self) -> TokenStream {
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             ElementContent::Leaf(leaf) => {
                 let docs = leaf
@@ -19,7 +19,7 @@ impl ElementContent {
                     .as_ref()
                     .map(|docs| quote! { #[doc = #docs] })
                     .unwrap_or_else(TokenStream::new);
-                let inner = leaf.to_impl();
+                let inner = leaf.to_impl(ctx);
                 // TODO: prevent collisions between the randomly chosen `pub value_` and attributes that
                 // are possibly named `pub value_`
                 quote! {
@@ -28,7 +28,7 @@ impl ElementContent {
                 }
             }
             ElementContent::Leaves(leaves) => {
-                let properties = leaves.iter().map(|el| el.to_impl()).collect::<Vec<_>>();
+                let properties = leaves.iter().map(|el| el.to_impl(ctx)).collect::<Vec<_>>();
                 quote!(#(#properties,)*)
             }
         }
@@ -37,7 +37,7 @@ impl ElementContent {
     pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match &self {
             ElementContent::Leaf(leaf) => {
-                let inner = leaf.to_xml_impl();
+                let inner = leaf.to_xml_impl(ctx);
                 quote! {
                     let val = &self.value_;
                     #inner;
@@ -58,7 +58,7 @@ impl ElementContent {
     pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match &self {
             ElementContent::Leaf(leaf) => {
-                let inner = leaf.from_xml_impl();
+                let inner = leaf.from_xml_impl(ctx);
                 quote! {
                     value_: {
                         let val = node.text()?;

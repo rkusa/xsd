@@ -16,7 +16,6 @@ use quote::{quote, TokenStreamExt};
 use roxmltree::{Document, TextPos};
 
 pub struct Schema {
-    pub elements: HashMap<Name, Root>,
     pub(crate) dependencies: HashMap<Name, HashSet<Name>>,
     pub(crate) context: SchemaContext,
 }
@@ -131,7 +130,7 @@ impl Schema {
 
                 // merge imports
                 let mut schema = Schema::parse_file_with_context(path, Some(ctx.take_shared()))?;
-                for (name, root) in std::mem::take(&mut schema.elements) {
+                for (name, root) in std::mem::take(&mut schema.context.elements) {
                     ctx.add_root(name, root);
                 }
                 ctx.set_shared(schema.into_shared());
@@ -156,13 +155,13 @@ impl Schema {
     }
 
     pub fn elements(&self) -> impl Iterator<Item = (&Name, &Root)> {
-        self.elements.iter()
+        self.context.elements.iter()
     }
 
     pub fn generate_all(&self) -> Result<TokenStream, SchemaError> {
         let mut result = TokenStream::new();
 
-        for name in self.elements.keys() {
+        for name in self.context.elements.keys() {
             result.append_all(self.generate_element(name)?);
         }
 
@@ -213,6 +212,7 @@ impl Schema {
 
     fn generate_element(&self, name: &Name) -> Result<TokenStream, SchemaError> {
         let el = self
+            .context
             .elements
             .get(name)
             .ok_or_else(|| SchemaError::NotFound {
@@ -228,7 +228,7 @@ impl Schema {
         } else {
             quote!(struct)
         };
-        let declaration = &el.to_declaration(&name_ident);
+        let declaration = &el.to_declaration(&name_ident, &self.context);
         let docs = el
             .docs()
             .map(|docs| quote! { #[doc = #docs] })

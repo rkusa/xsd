@@ -15,9 +15,9 @@ pub struct Attribute {
 }
 
 impl Attribute {
-    pub fn to_impl(&self) -> TokenStream {
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
-        let mut type_ident = self.content.to_impl();
+        let mut type_ident = self.content.to_impl(ctx);
         if self.is_optional {
             type_ident = quote! { Option<#type_ident> };
         }

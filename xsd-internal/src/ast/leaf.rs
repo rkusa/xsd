@@ -1,4 +1,5 @@
 use super::{LeafContent, LeafDefinition, Name};
+use crate::ast::Root;
 use crate::utils::escape_ident;
 use crate::xsd::context::SchemaContext;
 use inflector::Inflector;
@@ -46,9 +47,9 @@ impl Leaf {
         }
     }
 
-    pub fn to_impl(&self) -> TokenStream {
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
-        let mut type_ident = self.definition.to_impl();
+        let mut type_ident = self.definition.to_impl(ctx);
         if self.is_vec() {
             type_ident = quote! { Vec<#type_ident> }
         }
@@ -70,7 +71,7 @@ impl Leaf {
     pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = ctx.get_xml_element_name(&self.name);
-        let inner = self.definition.to_xml_impl();
+        let inner = self.definition.to_xml_impl(ctx);
 
         let mut tn = TokenStream::new();
         if self.is_virtual {
@@ -84,13 +85,22 @@ impl Leaf {
         }
 
         let wrap = !self.is_virtual
-            && !matches!(
-                self.definition,
+            && match &self.definition {
                 LeafDefinition {
-                    content: LeafContent::Named(_),
+                    content: LeafContent::Named(name),
                     ..
+                } => {
+                    matches!(
+                        ctx.elements.get(&name),
+                        Some(Root::Leaf(LeafDefinition {
+                            content: LeafContent::Literal(_),
+                            ..
+                        }))
+                    )
                 }
-            );
+                _ => true,
+            };
+
         if wrap {
             tn.append_all(quote! {
                 ctx.write_start_element(writer)?;
@@ -132,7 +142,7 @@ impl Leaf {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
         let namespace_xml = ctx.quote_xml_namespace(&self.name);
-        let mut value = self.definition.from_xml_impl();
+        let mut value = self.definition.from_xml_impl(ctx);
 
         if self.is_virtual {
             if self.is_optional() {

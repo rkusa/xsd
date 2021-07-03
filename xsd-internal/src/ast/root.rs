@@ -49,10 +49,10 @@ impl Root {
         }
     }
 
-    pub fn to_declaration(&self, root_name: &Ident) -> TokenStream {
+    pub fn to_declaration(&self, root_name: &Ident, ctx: &SchemaContext) -> TokenStream {
         match self {
             Root::Leaf(def) => {
-                let inner = def.to_impl();
+                let inner = def.to_impl(ctx);
                 let mut tn = quote! {
                     (pub #inner);
                 };
@@ -134,7 +134,7 @@ impl Root {
                 }
             }
             Root::Element(def) => {
-                let inner = def.to_impl();
+                let inner = def.to_impl(ctx);
                 quote! {
                     {
                         #inner
@@ -145,7 +145,7 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let type_name = variant.definition.to_impl();
+                    let type_name = variant.definition.to_impl(ctx);
                     quote! {
                         #variant_name(#type_name)
                     }
@@ -163,7 +163,7 @@ impl Root {
     pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             Root::Leaf(def) => {
-                let inner = def.to_xml_impl();
+                let inner = def.to_xml_impl(ctx);
                 let tn = quote! {
                     let val = &self.0;
                     #inner
@@ -205,7 +205,7 @@ impl Root {
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
                     let name_xml = &variant.name.name;
-                    let inner = variant.definition.to_xml_impl();
+                    let inner = variant.definition.to_xml_impl(ctx);
                     let is_literal = matches!(variant.definition.content, LeafContent::Literal(_));
                     let inner = if is_literal {
                         quote! {
@@ -246,7 +246,7 @@ impl Root {
     pub fn from_xml_impl(&self, name: &Ident, ctx: &SchemaContext) -> TokenStream {
         match self {
             Root::Leaf(def) => {
-                let inner = def.from_xml_impl();
+                let inner = def.from_xml_impl(ctx);
                 quote! {
                     #name(#inner)
                 }
@@ -269,7 +269,7 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let inner = variant.definition.from_xml_impl();
+                    let inner = variant.definition.from_xml_impl(ctx);
                     let name_xml = &variant.name.name;
                     let namespace_xml = ctx.quote_xml_namespace(&variant.name);
                     if variant.is_virtual {

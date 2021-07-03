@@ -1,3 +1,5 @@
+use crate::xsd::context::SchemaContext;
+
 use super::LeafContent;
 use proc_macro2::TokenStream;
 use rust_decimal::Decimal;
@@ -23,15 +25,15 @@ pub enum Restriction {
 }
 
 impl LeafDefinition {
-    pub fn to_impl(&self) -> TokenStream {
-        self.content.to_impl()
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
+        self.content.to_impl(ctx)
     }
 
-    pub fn to_xml_impl(&self) -> TokenStream {
-        self.content.to_xml_impl()
+    pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
+        self.content.to_xml_impl(ctx)
     }
 
-    pub fn from_xml_impl(&self) -> TokenStream {
-        self.content.from_xml_impl()
+    pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
+        self.content.from_xml_impl(ctx)
     }
 }

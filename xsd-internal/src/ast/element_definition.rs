@@ -21,13 +21,13 @@ impl ElementDefinition {
         self
     }
 
-    pub fn to_impl(&self) -> TokenStream {
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let mut ts = TokenStream::new();
         if let Some(content) = &self.content {
-            ts.append_all(content.to_impl());
+            ts.append_all(content.to_impl(ctx));
         }
         for attr in &self.attributes {
-            ts.append_all(attr.to_impl());
+            ts.append_all(attr.to_impl(ctx));
         }
         ts
     }

@@ -28,6 +28,7 @@ pub struct SharedContext {
 
 /// The context reduced to the data necessary for the code-generation.
 pub struct SchemaContext {
+    pub elements: HashMap<Name, Root>,
     pub target_namespace: Namespace,
     pub is_qualified: bool,
     pub namespaces: Namespaces,
@@ -74,10 +75,10 @@ impl<'input> Context<'input> {
         Schema {
             context: SchemaContext {
                 target_namespace: self.target_namespace(),
+                elements: self.roots,
                 is_qualified: self.is_qualified,
                 namespaces: self.shared.namespaces,
             },
-            elements: self.roots,
             dependencies: self.shared.dependencies,
         }
     }

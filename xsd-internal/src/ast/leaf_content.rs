@@ -1,4 +1,6 @@
 use super::{LiteralType, Name};
+use crate::ast::Root;
+use crate::xsd::context::SchemaContext;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -10,15 +12,18 @@ pub enum LeafContent {
 }
 
 impl LeafContent {
-    pub fn to_impl(&self) -> TokenStream {
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => literal.to_impl(),
-            LeafContent::Named(name) => name.to_impl(),
+            LeafContent::Named(name) => match ctx.elements.get(&name) {
+                Some(&Root::Leaf(ref def)) => def.to_impl(ctx),
+                _ => name.to_impl(),
+            },
             LeafContent::Fixed(_) => quote!(()),
         }
     }
 
-    pub fn to_xml_impl(&self) -> TokenStream {
+    pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => {
                 let inner = literal.to_xml_impl();
@@ -29,14 +34,17 @@ impl LeafContent {
                     }
                 }
             }
-            LeafContent::Named(name) => name.to_xml_impl(),
+            LeafContent::Named(name) => match ctx.elements.get(&name) {
+                Some(&Root::Leaf(ref def)) => def.to_xml_impl(ctx),
+                _ => name.to_xml_impl(),
+            },
             LeafContent::Fixed(fixed) => quote! {
                 writer.write(XmlEvent::characters(#fixed))?;
             },
         }
     }
 
-    pub fn from_xml_impl(&self) -> TokenStream {
+    pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => {
                 let inner = literal.from_str_impl();
@@ -47,7 +55,10 @@ impl LeafContent {
                     }
                 }
             }
-            LeafContent::Named(name) => name.from_xml_impl(),
+            LeafContent::Named(name) => match ctx.elements.get(&name) {
+                Some(&Root::Leaf(ref def)) => def.from_xml_impl(ctx),
+                _ => name.from_xml_impl(),
+            },
             LeafContent::Fixed(fixed) => {
                 quote! {
                     {
