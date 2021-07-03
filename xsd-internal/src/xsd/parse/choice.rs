@@ -54,6 +54,7 @@ where
                     max_occurs: MaxOccurs::default(),
                 }
             }
+            "annotation" => continue,
             child_name => {
                 return Err(XsdError::UnsupportedElement {
                     name: child_name.to_string(),

@@ -3,6 +3,9 @@
   <xs:element name="settings">
     <xs:complexType>
       <xs:sequence>
+        <xs:annotation>
+          <xs:documentation>includes</xs:documentation>
+        </xs:annotation>
         <xs:element name="scope" type="xs:string" />
         <xs:sequence>
           <xs:element name="key" type="xs:string" />

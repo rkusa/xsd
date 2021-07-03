@@ -5,6 +5,9 @@
       <xs:sequence>
         <xs:element name="id" type="xs:long" />
         <xs:choice>
+          <xs:annotation>
+            <xs:documentation>the name</xs:documentation>
+          </xs:annotation>
           <xs:element name="fullName" type="xs:string" />
           <xs:sequence>
             <xs:element name="firstName" type="xs:string" />
