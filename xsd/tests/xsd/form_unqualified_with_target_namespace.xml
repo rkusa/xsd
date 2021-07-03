@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ns1:article xmlns:ns1="urn:foobar">
-  <excerpt>Lorem Ipsum</excerpt>
-  <author>
-    <name>Foobar</name>
-  </author>
-</ns1:article>
