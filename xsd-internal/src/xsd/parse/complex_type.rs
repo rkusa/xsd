@@ -11,7 +11,7 @@ use super::element::parse_max_occurs;
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
-    ctx: &Context<'a, 'input>,
+    ctx: &mut Context<'input>,
 ) -> Result<Root, XsdError>
 where
     'a: 'input,

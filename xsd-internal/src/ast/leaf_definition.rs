@@ -1,4 +1,4 @@
-use super::{ElementDefault, LeafContent, Namespaces, State};
+use super::{LeafContent, State};
 use proc_macro2::TokenStream;
 use rust_decimal::Decimal;
 
@@ -27,15 +27,11 @@ impl LeafDefinition {
         self.content.to_impl(state)
     }
 
-    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
-        self.content.to_xml_impl(element_default)
+    pub fn to_xml_impl(&self) -> TokenStream {
+        self.content.to_xml_impl()
     }
 
-    pub fn from_xml_impl<'a>(
-        &self,
-        element_default: &ElementDefault,
-        namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
-        self.content.from_xml_impl(element_default, namespaces)
+    pub fn from_xml_impl(&self) -> TokenStream {
+        self.content.from_xml_impl()
     }
 }

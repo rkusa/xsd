@@ -1,4 +1,4 @@
-use super::{ElementDefault, LiteralType, Name, Namespaces, State};
+use super::{LiteralType, Name, State};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -18,10 +18,10 @@ impl LeafContent {
         }
     }
 
-    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => {
-                let inner = literal.to_xml_impl(element_default);
+                let inner = literal.to_xml_impl();
                 quote! {
                     let val = #inner;
                     if !val.is_empty() {
@@ -29,18 +29,14 @@ impl LeafContent {
                     }
                 }
             }
-            LeafContent::Named(name) => name.to_xml_impl(element_default),
+            LeafContent::Named(name) => name.to_xml_impl(),
             LeafContent::Fixed(fixed) => quote! {
                 writer.write(XmlEvent::characters(#fixed))?;
             },
         }
     }
 
-    pub fn from_xml_impl<'a>(
-        &self,
-        element_default: &ElementDefault,
-        namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn from_xml_impl(&self) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => {
                 let inner = literal.from_str_impl();
@@ -51,7 +47,7 @@ impl LeafContent {
                     }
                 }
             }
-            LeafContent::Named(name) => name.from_xml_impl(element_default, namespaces),
+            LeafContent::Named(name) => name.from_xml_impl(),
             LeafContent::Fixed(fixed) => {
                 quote! {
                     {

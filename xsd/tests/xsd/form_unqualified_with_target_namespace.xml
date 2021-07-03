@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tn:article xmlns:tn="urn:foobar">
+<ns1:article xmlns:ns1="urn:foobar">
   <excerpt>Lorem Ipsum</excerpt>
   <author>
     <name>Foobar</name>
   </author>
-</tn:article>
+</ns1:article>

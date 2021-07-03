@@ -1,5 +1,6 @@
-use super::{get_xml_name, ElementDefault, LeafContent, LeafDefinition, Name, Namespaces, State};
+use super::{LeafContent, LeafDefinition, Name, State};
 use crate::utils::escape_ident;
+use crate::xsd::context::SchemaContext;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
@@ -65,10 +66,10 @@ impl Leaf {
         }
     }
 
-    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
-        let name_xml = get_xml_name(&self.name, element_default.qualified);
-        let inner = self.definition.to_xml_impl(element_default);
+        let name_xml = ctx.get_xml_element_name(&self.name);
+        let inner = self.definition.to_xml_impl();
 
         let mut tn = TokenStream::new();
         if self.is_virtual {
@@ -126,15 +127,11 @@ impl Leaf {
         }
     }
 
-    pub fn from_xml_impl<'a>(
-        &self,
-        element_default: &ElementDefault,
-        namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn from_xml_impl(&self, context: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
-        let namespace_xml = self.name.namespace.to_quote(&element_default);
-        let mut value = self.definition.from_xml_impl(element_default, namespaces);
+        let namespace_xml = context.quote_xml_namespace(&self.name);
+        let mut value = self.definition.from_xml_impl();
 
         if self.is_virtual {
             if self.is_optional() {

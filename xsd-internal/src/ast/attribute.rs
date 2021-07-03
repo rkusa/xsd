@@ -1,5 +1,6 @@
-use super::{get_xml_name, ElementDefault, LeafContent, Name, Namespaces, State};
+use super::{LeafContent, Name, State};
 use crate::utils::escape_ident;
+use crate::xsd::context::SchemaContext;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -31,11 +32,11 @@ impl Attribute {
         }
     }
 
-    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
-        let name_xml = get_xml_name(&self.name, element_default.qualified);
+        let name_xml = ctx.get_xml_element_name(&self.name);
         let inner = match &self.content {
-            LeafContent::Literal(literal) => literal.to_xml_impl(element_default),
+            LeafContent::Literal(literal) => literal.to_xml_impl(),
             LeafContent::Named(_) => quote! { val.to_string() },
             LeafContent::Fixed(fixed) => quote! { #fixed },
         };
@@ -57,11 +58,7 @@ impl Attribute {
         }
     }
 
-    pub fn from_xml_impl<'a>(
-        &self,
-        _element_default: &ElementDefault,
-        _namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn from_xml_impl(&self) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let name_xml = &self.name.name;
         let inner = self.content.from_str_impl();

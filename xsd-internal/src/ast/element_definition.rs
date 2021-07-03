@@ -1,6 +1,6 @@
-use super::{
-    Attribute, ElementContent, ElementDefault, LeafContent, LeafDefinition, Namespaces, State,
-};
+use crate::xsd::context::SchemaContext;
+
+use super::{Attribute, ElementContent, LeafContent, LeafDefinition, State};
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
@@ -32,10 +32,10 @@ impl ElementDefinition {
         ts
     }
 
-    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let mut ts = TokenStream::new();
         for attr in &self.attributes {
-            ts.append_all(attr.to_xml_impl(element_default));
+            ts.append_all(attr.to_xml_impl(ctx));
         }
         let is_named_leaf = matches!(
             self.content,
@@ -49,7 +49,7 @@ impl ElementDefinition {
             ts.append_all(quote! { ctx.write_start_element(writer)?; });
         }
         if let Some(content) = &self.content {
-            ts.append_all(content.to_xml_impl(element_default));
+            ts.append_all(content.to_xml_impl(ctx));
         }
         if wrap {
             ts.append_all(quote! { ctx.write_end_element(writer)?; });
@@ -57,17 +57,13 @@ impl ElementDefinition {
         ts
     }
 
-    pub fn from_xml_impl<'a>(
-        &self,
-        element_default: &ElementDefault,
-        namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let mut ts = TokenStream::new();
         if let Some(content) = &self.content {
-            ts.append_all(content.from_xml_impl(element_default, namespaces));
+            ts.append_all(content.from_xml_impl(ctx));
         }
         for attr in &self.attributes {
-            ts.append_all(attr.from_xml_impl(element_default, namespaces));
+            ts.append_all(attr.from_xml_impl());
         }
         quote! {
             {

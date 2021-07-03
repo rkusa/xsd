@@ -9,7 +9,7 @@ use crate::xsd::node::{Attribute, Node};
 
 pub fn parse_root<'a, 'input>(
     node: Node<'a, 'input>,
-    ctx: &Context<'a, 'input>,
+    ctx: &mut Context<'input>,
 ) -> Result<Root, XsdError>
 where
     'a: 'input,
@@ -64,7 +64,7 @@ where
 pub fn parse_child<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
-    ctx: &Context<'a, 'input>,
+    ctx: &mut Context<'input>,
 ) -> Result<Leaf, XsdError>
 where
     'a: 'input,
@@ -134,10 +134,8 @@ where
             ctx,
             false,
         );
-        ctx.add_root(
-            virtual_name.clone(),
-            super::root::parse(node, &virtual_name, ctx)?,
-        );
+        let root = super::root::parse(node, &virtual_name, ctx)?;
+        ctx.add_root(virtual_name.clone(), root);
         Ok(Leaf {
             name,
             definition: LeafDefinition {

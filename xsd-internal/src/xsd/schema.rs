@@ -5,10 +5,10 @@ use std::io;
 use std::ops::Range;
 use std::{collections::HashMap, path::Path};
 
-use super::context::{Context, NS_XSD};
+use super::context::{Context, SchemaContext, SharedContext, NS_XSD};
 use super::error::XsdError;
 use super::node::Node;
-use crate::ast::{get_xml_name, ElementDefault, Name, Namespace, Namespaces, Root};
+use crate::ast::{Name, Namespace, Root};
 use crate::utils::escape_ident;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
@@ -16,14 +16,20 @@ use quote::{quote, TokenStreamExt};
 use roxmltree::{Document, TextPos};
 
 pub struct Schema {
-    elements: HashMap<Name, Root>,
-    dependencies: HashMap<Name, HashSet<Name>>,
-    target_namespace: Option<String>,
-    qualified: bool,
+    pub(crate) elements: HashMap<Name, Root>,
+    pub(crate) dependencies: HashMap<Name, HashSet<Name>>,
+    pub(crate) context: SchemaContext,
 }
 
 impl Schema {
     pub fn parse_file(path: impl AsRef<Path>) -> Result<Self, SchemaError> {
+        Self::parse_file_with_context(path, None)
+    }
+
+    fn parse_file_with_context(
+        path: impl AsRef<Path>,
+        shared: Option<SharedContext>,
+    ) -> Result<Self, SchemaError> {
         let path = path.as_ref();
 
         let data = match read_to_string(&path) {
@@ -36,10 +42,18 @@ impl Schema {
             }
         };
 
-        Schema::parse(&data, path)
+        Schema::parse_with_context(&data, path, shared)
     }
 
     pub fn parse(data: &str, path: impl AsRef<Path>) -> Result<Self, SchemaError> {
+        Self::parse_with_context(data, path, None)
+    }
+
+    fn parse_with_context(
+        data: &str,
+        path: impl AsRef<Path>,
+        shared: Option<SharedContext>,
+    ) -> Result<Self, SchemaError> {
         let path = path.as_ref().to_path_buf();
         let doc = match Document::parse(data) {
             Ok(doc) => doc,
@@ -56,18 +70,20 @@ impl Schema {
 
         let base_path = path.parent().unwrap_or_else(|| path.as_path());
         let root_node = doc.root_element().into();
-        Schema::parse_schema(&root_node, base_path, None).map_err(|err| match err {
-            ParseError::Schema(err) => err,
-            ParseError::Xsd(err) => {
-                let pos = err
-                    .range()
-                    .map(|range| doc.text_pos_at(range.start))
-                    .unwrap_or_else(|| TextPos { row: 0, col: 0 });
-                SchemaError::Xsd {
-                    file: path.to_string_lossy().to_string(),
-                    row: pos.row,
-                    col: pos.col,
-                    err: Box::new(err),
+        Schema::parse_schema_with_context(&root_node, base_path, None, shared).map_err(|err| {
+            match err {
+                ParseError::Schema(err) => err,
+                ParseError::Xsd(err) => {
+                    let pos = err
+                        .range()
+                        .map(|range| doc.text_pos_at(range.start))
+                        .unwrap_or_else(|| TextPos { row: 0, col: 0 });
+                    SchemaError::Xsd {
+                        file: path.to_string_lossy().to_string(),
+                        row: pos.row,
+                        col: pos.col,
+                        err: Box::new(err),
+                    }
                 }
             }
         })
@@ -77,6 +93,15 @@ impl Schema {
         root: &Node<'_, '_>,
         base_path: &Path,
         target_namespace: Option<&str>,
+    ) -> Result<Self, ParseError> {
+        Self::parse_schema_with_context(root, base_path, target_namespace, None)
+    }
+
+    fn parse_schema_with_context(
+        root: &Node<'_, '_>,
+        base_path: &Path,
+        target_namespace: Option<&str>,
+        shared: Option<SharedContext>,
     ) -> Result<Self, ParseError> {
         if root.namespace().as_deref() != Some(NS_XSD) || root.name() != "schema" {
             return Err(XsdError::UnsupportedElement {
@@ -89,26 +114,27 @@ impl Schema {
         let target_namespace = target_namespace
             .map(Cow::Borrowed)
             .or_else(|| root.attribute("targetNamespace").map(|a| a.value()));
-        let qualified = root
-            .attribute("elementFormDefault")
-            .map(|a| a.value())
-            .as_deref()
-            == Some("qualified");
-        let mut ctx = Context::new(&root, target_namespace.as_deref());
+
+        let mut ctx = Context::new(
+            &root,
+            target_namespace.as_deref(),
+            shared.unwrap_or_default(),
+        );
 
         for child in root.children().namespace(NS_XSD).iter() {
             // TODO: prevent circular includes
-            if child.name() == "include" {
+            if child.name() == "include" || child.name() == "import" {
                 // TODO: make sure that it is a relative path
                 let location: &str = &child.try_attribute("schemaLocation")?.value();
                 let mut path = base_path.to_path_buf();
                 path.push(location);
 
                 // merge imports
-                let import = Schema::parse_file(path)?;
-                for (name, root) in import.elements {
+                let mut schema = Schema::parse_file_with_context(path, Some(ctx.take_shared()))?;
+                for (name, root) in std::mem::take(&mut schema.elements) {
                     ctx.add_root(name, root);
                 }
+                ctx.set_shared(schema.into_shared());
 
                 continue;
             }
@@ -116,49 +142,33 @@ impl Schema {
             let name = Name::new(
                 child.try_attribute("name")?.value(),
                 // Root elements and types are qualified to the target namespace if there is one
-                if target_namespace.is_some() {
-                    Namespace::Target
-                } else {
-                    Namespace::None
-                },
+                ctx.target_namespace(),
             );
 
-            let root = crate::xsd::parse::root::parse(child, &name, &ctx)?;
+            let root = crate::xsd::parse::root::parse(child, &name, &mut ctx)?;
             ctx.add_root(name, root);
         }
 
-        Ok(Schema {
-            elements: ctx.take_roots(),
-            dependencies: ctx.take_dependencies(),
-            target_namespace: target_namespace.map(String::from),
-            qualified,
-        })
+        Ok(ctx.into_schema())
+    }
+
+    fn into_shared(self) -> SharedContext {
+        SharedContext {
+            namespaces: self.context.namespaces,
+            dependencies: self.dependencies,
+        }
     }
 
     pub fn elements(&self) -> impl Iterator<Item = (&Name, &Root)> {
         self.elements.iter()
     }
 
-    pub fn target_namespace(&self) -> Option<&str> {
-        self.target_namespace.as_deref()
-    }
-
-    pub fn qualified(&self) -> bool {
-        self.qualified
-    }
-
     pub fn generate_all(&self) -> Result<TokenStream, SchemaError> {
-        // TODO: derive from schema
-        let namespaces = HashMap::new();
-        let element_default = ElementDefault {
-            target_namespace: self.target_namespace().map(|tn| tn.to_string()),
-            qualified: self.qualified(),
-        };
         let state = ();
         let mut result = TokenStream::new();
 
         for name in self.elements.keys() {
-            result.append_all(self.generate_element(name, state, &namespaces, &element_default)?);
+            result.append_all(self.generate_element(name, state)?);
         }
 
         Ok(result)
@@ -169,12 +179,6 @@ impl Schema {
         name: &'a Name,
         already_generated: &mut HashSet<&'a Name>,
     ) -> Result<TokenStream, SchemaError> {
-        // TODO: derive from schema
-        let namespaces = HashMap::new();
-        let element_default = ElementDefault {
-            target_namespace: self.target_namespace().map(|tn| tn.to_string()),
-            qualified: self.qualified(),
-        };
         let state = ();
         let mut result = TokenStream::new();
 
@@ -206,20 +210,14 @@ impl Schema {
             if already_generated.contains(name) {
                 continue;
             }
-            result.append_all(self.generate_element(name, state, &namespaces, &element_default)?);
+            result.append_all(self.generate_element(name, state)?);
             already_generated.insert(name);
         }
 
         Ok(result)
     }
 
-    fn generate_element<'a>(
-        &self,
-        name: &Name,
-        mut state: (),
-        namespaces: &'a Namespaces<'a>,
-        element_default: &ElementDefault,
-    ) -> Result<TokenStream, SchemaError> {
+    fn generate_element(&self, name: &Name, mut state: ()) -> Result<TokenStream, SchemaError> {
         let el = self
             .elements
             .get(name)
@@ -248,16 +246,24 @@ impl Schema {
             pub #kind #name_ident#declaration
         });
 
-        let to_xml = el.to_xml_impl(element_default);
+        let to_xml = el.to_xml_impl(&self.context);
 
-        let name_xml = get_xml_name(&name, element_default.qualified);
+        let name_xml = self.context.get_xml_element_name(&name);
         let mut element_ns = Vec::new();
-        if let Some(tn) = self.target_namespace() {
-            if self.qualified() {
-                element_ns.push(quote! { .set_default_ns(#tn) });
-            } else {
-                element_ns.push(quote! { .set_ns("tn", #tn) });
+        if self.context.is_qualified {
+            if let Namespace::Id(id) = self.context.target_namespace {
+                let ns = self.context.namespaces.get_by_id(id);
+                let namespace = &ns.namespace;
+                element_ns.push(quote! { .set_default_ns(#namespace) });
             }
+        }
+        for (id, ns) in self.context.namespaces.iter() {
+            if self.context.is_qualified && Namespace::Id(id) == self.context.target_namespace {
+                continue;
+            }
+            let prefix = &ns.prefix;
+            let namespace = &ns.namespace;
+            element_ns.push(quote! { .set_ns(#prefix, #namespace) });
         }
 
         result.append_all(quote! {
@@ -297,8 +303,8 @@ impl Schema {
         });
 
         let name_xml = &name.name;
-        let namespace_xml = name.namespace.to_quote(&element_default);
-        let from_xml = el.from_xml_impl(&name_ident, &element_default, &namespaces);
+        let namespace_xml = self.context.quote_xml_namespace(&name);
+        let from_xml = el.from_xml_impl(&name_ident, &self.context);
 
         result.append_all(quote! {
             impl #name_ident {
@@ -314,7 +320,7 @@ impl Schema {
             }
         });
 
-        let lookahead = el.lookahead_impl(&element_default);
+        let lookahead = el.lookahead_impl(&self.context);
 
         result.append_all(quote! {
             impl #name_ident {

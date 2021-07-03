@@ -9,7 +9,7 @@ use crate::xsd::node::Node;
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
     parent: &Name,
-    ctx: &Context<'a, 'input>,
+    ctx: &mut Context<'input>,
 ) -> Result<Vec<Leaf>, XsdError>
 where
     'a: 'input,

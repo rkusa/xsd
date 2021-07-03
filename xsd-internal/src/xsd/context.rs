@@ -1,64 +1,90 @@
-use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::mem;
-use std::rc::Rc;
 
 use super::error::XsdError;
 use super::node::Attribute;
-use crate::ast::{LeafContent, LiteralType, Name, Namespace, Root};
+use super::schema::Schema;
+use crate::ast::{LeafContent, LiteralType, Name, Namespace, Namespaces, Root};
+use proc_macro2::TokenStream;
+use quote::quote;
 
-pub struct Context<'a, 'input> {
-    roots: Rc<RefCell<HashMap<Name, Root>>>,
+/// The context that holds all data that is either necessary during parsing a schema, or is
+/// pupulated during parsing a scheme with data necessary for the subsequent code-generation.
+pub struct Context<'input> {
+    roots: HashMap<Name, Root>,
     default_namespace: Option<&'input str>,
-    target_namespace: Option<&'a str>,
-    namespaces: HashMap<&'input str, &'input str>,
-    /// Dependencies between structs. Key = parent, Value = child
-    dependencies: Rc<RefCell<HashMap<Name, HashSet<Name>>>>,
+    target_namespace: Namespace,
+    document_namespaces: HashMap<&'input str, &'input str>,
     is_qualified: bool,
+    shared: SharedContext,
+}
+
+/// The parts of the [Context] that are shared between schema files (during includes/imports).
+#[derive(Debug, Default)]
+pub struct SharedContext {
+    pub namespaces: Namespaces,
+    /// Dependencies between structs. Key = parent, Value = child
+    pub dependencies: HashMap<Name, HashSet<Name>>,
+}
+
+/// The context reduced to the data necessary for the code-generation.
+pub struct SchemaContext {
+    pub target_namespace: Namespace,
+    pub is_qualified: bool,
+    pub namespaces: Namespaces,
 }
 
 pub const NS_XSD: &str = "http://www.w3.org/2001/XMLSchema";
 
-impl<'a, 'input> Context<'a, 'input>
-where
-    'a: 'input,
-{
-    pub fn new(schema: &roxmltree::Node<'a, 'input>, target_namespace: Option<&'a str>) -> Self {
-        let mut namespaces = HashMap::new();
+impl<'input> Context<'input> {
+    pub fn new<'a: 'input>(
+        schema: &'a roxmltree::Node<'a, 'input>,
+        target_namespace: Option<&'a str>,
+        mut shared: SharedContext,
+    ) -> Self {
+        let mut document_namespaces = HashMap::new();
         for ns in schema.namespaces() {
             if let Some(prefix) = ns.name() {
-                namespaces.insert(prefix, ns.uri());
+                document_namespaces.insert(prefix, ns.uri());
             }
         }
         Context {
             roots: Default::default(),
             default_namespace: schema.default_namespace(),
-            target_namespace,
-            namespaces,
-            dependencies: Default::default(),
+            target_namespace: target_namespace
+                .map(|tn| shared.namespaces.get_or_insert(tn))
+                .unwrap_or_default(),
+            document_namespaces,
             is_qualified: schema.attribute("elementFormDefault") == Some("qualified"),
+            shared,
         }
     }
 
-    pub fn add_root(&self, name: Name, root: Root) {
-        let mut roots = self.roots.borrow_mut();
-        roots.insert(name, root);
+    pub fn take_shared(&mut self) -> SharedContext {
+        std::mem::take(&mut self.shared)
+    }
+    pub fn set_shared(&mut self, shared: SharedContext) {
+        self.shared = shared
     }
 
-    pub fn take_roots(&mut self) -> HashMap<Name, Root> {
-        let mut roots = self.roots.borrow_mut();
-        mem::take(&mut roots)
+    pub fn add_root(&mut self, name: Name, root: Root) {
+        self.roots.insert(name, root);
     }
 
-    pub fn take_dependencies(&mut self) -> HashMap<Name, HashSet<Name>> {
-        let mut dependencies = self.dependencies.borrow_mut();
-        mem::take(&mut dependencies)
+    pub fn into_schema(self) -> Schema {
+        Schema {
+            context: SchemaContext {
+                target_namespace: self.target_namespace(),
+                is_qualified: self.is_qualified,
+                namespaces: self.shared.namespaces,
+            },
+            elements: self.roots,
+            dependencies: self.shared.dependencies,
+        }
     }
 
-    pub fn discover_type(&self, name: &Name, parent: Option<&Name>) {
+    pub fn discover_type(&mut self, name: &Name, parent: Option<&Name>) {
         if let Some(parent) = parent {
-            let mut dependencies = self.dependencies.borrow_mut();
-            let dependends = dependencies.entry(parent.clone()).or_default();
+            let dependends = self.shared.dependencies.entry(parent.clone()).or_default();
             dependends.insert(name.clone());
         }
     }
@@ -67,26 +93,28 @@ where
         Name::new(
             name,
             if self.is_qualified || is_top_level {
-                Namespace::Target
+                self.target_namespace()
             } else {
                 Namespace::None
             },
         )
     }
 
-    pub fn get_type_name<'b, 'c>(&self, attr: &Attribute<'b, 'c>) -> Result<LeafContent, XsdError> {
+    pub fn get_type_name<'b, 'c>(
+        &mut self,
+        attr: &Attribute<'b, 'c>,
+    ) -> Result<LeafContent, XsdError> {
         let type_name = attr.value();
         let mut parts = type_name.splitn(2, ':');
 
         let name = match (parts.next(), parts.next()) {
             (Some(prefix), Some(name)) => {
-                let ns = self
-                    .namespaces
-                    .get(prefix)
-                    .ok_or_else(|| XsdError::MissingNamespace {
+                let ns = self.document_namespaces.get(prefix).ok_or_else(|| {
+                    XsdError::MissingNamespace {
                         prefix: prefix.to_string(),
                         range: attr.range(),
-                    })?;
+                    }
+                })?;
                 return if *ns == NS_XSD {
                     Ok(LeafContent::Literal(literal_from_str(name).ok_or_else(
                         || XsdError::UnsupportedType {
@@ -94,12 +122,12 @@ where
                             range: attr.range(),
                         },
                     )?))
-                } else if Some(*ns) == self.target_namespace {
-                    Ok(LeafContent::Named(Name::new(name, Namespace::Target)))
+                } else if let Namespace::Id(id) = self.target_namespace {
+                    Ok(LeafContent::Named(Name::new(name, Namespace::Id(id))))
                 } else {
                     Ok(LeafContent::Named(Name::new(
                         name,
-                        Namespace::Other(ns.to_string()),
+                        self.shared.namespaces.get_or_insert(ns),
                     )))
                 };
             }
@@ -115,6 +143,37 @@ where
             )?))
         } else {
             Ok(LeafContent::Named(Name::new(name, Namespace::None)))
+        }
+    }
+
+    pub fn target_namespace(&self) -> Namespace {
+        self.target_namespace
+    }
+}
+
+impl SchemaContext {
+    pub fn get_xml_element_name(&self, name: &Name) -> String {
+        match &name.namespace {
+            Namespace::None => name.name.clone(),
+            Namespace::Id(id) => {
+                if self.is_qualified && name.namespace == self.target_namespace {
+                    name.name.clone()
+                } else {
+                    let ns = self.namespaces.get_by_id(*id);
+                    format!("{}:{}", ns.prefix, name.name)
+                }
+            }
+        }
+    }
+
+    pub fn quote_xml_namespace(&self, name: &Name) -> TokenStream {
+        match &name.namespace {
+            Namespace::None => quote!(None),
+            Namespace::Id(id) => {
+                let ns = self.namespaces.get_by_id(*id);
+                let ns = &ns.namespace;
+                quote!(Some(#ns))
+            }
         }
     }
 }

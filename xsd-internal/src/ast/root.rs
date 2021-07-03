@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
-use super::{
-    ElementContent, ElementDefault, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name,
-    Namespaces, State,
-};
+use crate::xsd::context::SchemaContext;
+
+use super::{ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name, State};
 use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, TokenStreamExt};
@@ -161,10 +160,10 @@ impl Root {
         }
     }
 
-    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             Root::Leaf(def) => {
-                let inner = def.to_xml_impl(element_default);
+                let inner = def.to_xml_impl();
                 let tn = quote! {
                     let val = &self.0;
                     #inner
@@ -196,7 +195,7 @@ impl Root {
                     ctx.write_end_element(writer)?;
                 }
             }
-            Root::Element(def) => def.to_xml_impl(element_default),
+            Root::Element(def) => def.to_xml_impl(ctx),
             Root::Choice(ChoiceDefinition {
                 variants,
                 is_virtual,
@@ -206,7 +205,7 @@ impl Root {
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
                     let name_xml = &variant.name.name;
-                    let inner = variant.definition.to_xml_impl(element_default);
+                    let inner = variant.definition.to_xml_impl();
                     let is_literal = matches!(variant.definition.content, LeafContent::Literal(_));
                     let inner = if is_literal {
                         quote! {
@@ -244,15 +243,10 @@ impl Root {
         }
     }
 
-    pub fn from_xml_impl<'a>(
-        &self,
-        name: &Ident,
-        element_default: &ElementDefault,
-        namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn from_xml_impl(&self, name: &Ident, ctx: &SchemaContext) -> TokenStream {
         match self {
             Root::Leaf(def) => {
-                let inner = def.from_xml_impl(element_default, namespaces);
+                let inner = def.from_xml_impl();
                 quote! {
                     #name(#inner)
                 }
@@ -266,7 +260,7 @@ impl Root {
                 }
             }
             Root::Element(def) => {
-                let inner = def.from_xml_impl(element_default, namespaces);
+                let inner = def.from_xml_impl(ctx);
                 quote! {
                     #name#inner
                 }
@@ -275,11 +269,9 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let inner = variant
-                        .definition
-                        .from_xml_impl(element_default, namespaces);
+                    let inner = variant.definition.from_xml_impl();
                     let name_xml = &variant.name.name;
-                    let namespace_xml = variant.name.namespace.to_quote(&element_default);
+                    let namespace_xml = ctx.quote_xml_namespace(&variant.name);
                     if variant.is_virtual {
                         if let LeafContent::Named(name) = &variant.definition.content {
                             let first_name = format_ident!("{}", name.name.to_pascal_case());
@@ -314,7 +306,7 @@ impl Root {
         }
     }
 
-    pub fn lookahead_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn lookahead_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             Root::Leaf(_) => {
                 quote! {
@@ -352,7 +344,7 @@ impl Root {
                             })
                         } else {
                             let name_xml = &leaf.name.name;
-                            let namespace_xml = leaf.name.namespace.to_quote(&element_default);
+                            let namespace_xml = ctx.quote_xml_namespace(&leaf.name);
                             Some(quote! {
                                 node.peek_child(#name_xml, #namespace_xml)
                             })
@@ -384,7 +376,7 @@ impl Root {
                         }
                     } else {
                         let name_xml = &variant.name.name;
-                        let namespace_xml = variant.name.namespace.to_quote(&element_default);
+                        let namespace_xml = ctx.quote_xml_namespace(&variant.name);
                         quote! {
                             node.peek_child(#name_xml, #namespace_xml)
                         }

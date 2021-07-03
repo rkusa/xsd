@@ -1,4 +1,6 @@
-use super::{ElementDefault, Leaf, LeafDefinition, Namespaces, State};
+use crate::xsd::context::SchemaContext;
+
+use super::{Leaf, LeafDefinition, State};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -35,10 +37,10 @@ impl ElementContent {
         }
     }
 
-    pub fn to_xml_impl(&self, element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match &self {
             ElementContent::Leaf(leaf) => {
-                let inner = leaf.to_xml_impl(element_default);
+                let inner = leaf.to_xml_impl();
                 quote! {
                     let val = &self.value_;
                     #inner;
@@ -47,7 +49,7 @@ impl ElementContent {
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
-                    .map(|el| el.to_xml_impl(element_default))
+                    .map(|el| el.to_xml_impl(ctx))
                     .collect::<Vec<_>>();
                 quote! {
                     #(#properties)*
@@ -56,14 +58,10 @@ impl ElementContent {
         }
     }
 
-    pub fn from_xml_impl<'a>(
-        &self,
-        element_default: &ElementDefault,
-        namespaces: &'a Namespaces<'a>,
-    ) -> TokenStream {
+    pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match &self {
             ElementContent::Leaf(leaf) => {
-                let inner = leaf.from_xml_impl(element_default, namespaces);
+                let inner = leaf.from_xml_impl();
                 quote! {
                     value_: {
                         let val = node.text()?;
@@ -74,7 +72,7 @@ impl ElementContent {
             ElementContent::Leaves(leaves) => {
                 let properties = leaves
                     .iter()
-                    .map(|el| el.from_xml_impl(element_default, namespaces))
+                    .map(|el| el.from_xml_impl(ctx))
                     .collect::<Vec<_>>();
                 quote!(#(#properties,)*)
             }

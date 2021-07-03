@@ -1,4 +1,4 @@
-use super::{ElementDefault, State};
+use super::State;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -65,7 +65,7 @@ impl LiteralType {
         }
     }
 
-    pub fn to_xml_impl(&self, _element_default: &ElementDefault) -> TokenStream {
+    pub fn to_xml_impl(&self) -> TokenStream {
         quote!(val.to_string())
     }
 

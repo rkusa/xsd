@@ -18,7 +18,7 @@ use crate::ast::Name;
 
 fn derive_virtual_name<'a, 'input, 'b>(
     names: impl IntoIterator<Item = &'b Name> + Clone,
-    ctx: &'b Context<'a, 'input>,
+    ctx: &'b Context<'input>,
     shorten: bool,
 ) -> Name
 where
