@@ -32,6 +32,8 @@ pub enum FromXmlError {
         expected: &'static str,
         received: String,
     },
+    #[error("infallible")]
+    Infallible(#[from] std::convert::Infallible),
 }
 
 pub struct Document<'a>(roxmltree::Document<'a>);

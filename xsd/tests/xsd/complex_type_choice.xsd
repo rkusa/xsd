@@ -17,6 +17,7 @@
       <xs:element name="user" type="User" />
       <xs:element name="bot" type="Bot" />
     </xs:choice>
+    <xs:attribute name="isVerified" type="xs:boolean" use="required"/>
   </xs:complexType>
   <xs:element name="article">
     <xs:complexType>
@@ -31,6 +32,7 @@
               <xs:element name="user" type="User" />
               <xs:element name="bot" type="Bot" />
             </xs:choice>
+            <xs:attribute name="isVerified" type="xs:boolean" use="required"/>
           </xs:complexType>
         </xs:element>
       </xs:sequence>

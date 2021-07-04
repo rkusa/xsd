@@ -89,12 +89,24 @@ where
         }
     } else if let Some(child) = children.remove("choice", Some(NS_XSD)) {
         let variants = super::choice::parse(child, parent, ctx)?;
-        children.prevent_unvisited_children()?;
-        return Ok(Root::Choice(ChoiceDefinition {
-            variants,
-            is_virtual: false,
-            docs,
-        }));
+        let root_name =
+            super::derive_virtual_name(vec![parent, &ctx.get_node_name("Data", false)], ctx, false);
+
+        ctx.add_root(
+            root_name.clone(),
+            Root::Choice(ChoiceDefinition {
+                variants,
+                is_virtual: false,
+                docs: None,
+            }),
+        );
+        ctx.discover_type(&root_name, Some(parent));
+
+        Some(ElementContent::Leaf(LeafDefinition {
+            content: LeafContent::Named(root_name),
+            restrictions: Vec::new(),
+            docs: None,
+        }))
     } else {
         None
     };
