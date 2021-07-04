@@ -91,7 +91,7 @@ impl Leaf {
                     ..
                 } => {
                     matches!(
-                        ctx.elements.get(&name),
+                        ctx.resolve(&name),
                         Some(Root::Leaf(LeafDefinition {
                             content: LeafContent::Literal(_),
                             ..

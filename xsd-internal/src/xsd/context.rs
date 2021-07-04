@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::error::XsdError;
 use super::node::Attribute;
 use super::schema::Schema;
-use crate::ast::{LeafContent, LiteralType, Name, Namespace, Namespaces, Root};
+use crate::ast::{LeafContent, LeafDefinition, LiteralType, Name, Namespace, Namespaces, Root};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -174,6 +174,18 @@ impl SchemaContext {
                 quote!(Some(#ns))
             }
         }
+    }
+
+    pub fn resolve(&self, name: &Name) -> Option<&Root> {
+        let mut next = self.elements.get(name);
+        while let Some(Root::Leaf(LeafDefinition {
+            content: LeafContent::Named(name),
+            ..
+        })) = next
+        {
+            next = self.elements.get(name);
+        }
+        next
     }
 }
 
