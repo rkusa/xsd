@@ -55,7 +55,7 @@ impl<'input> Context<'input> {
                 .map(|tn| shared.namespaces.get_or_insert(tn))
                 .unwrap_or_default(),
             document_namespaces,
-            is_qualified: true, // schema.attribute("elementFormDefault") == Some("qualified"),
+            is_qualified: schema.attribute("elementFormDefault") == Some("qualified"),
             shared,
         }
     }
