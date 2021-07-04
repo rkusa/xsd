@@ -188,7 +188,6 @@ impl Leaf {
                     {
                         let mut vec = Vec::new();
                         while let Some(node) = node.next_child(#name_xml, #namespace_xml) {
-                            let val = node.text()?;
                             vec.push(#value);
                         }
                         vec

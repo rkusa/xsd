@@ -61,7 +61,6 @@ impl ElementContent {
                 let inner = leaf.from_xml_impl(ctx);
                 quote! {
                     value_: {
-                        let val = node.text()?;
                         #inner
                     },
                 }
