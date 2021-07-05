@@ -7,7 +7,7 @@ use pretty_assertions::assert_eq;
 fn attribute_default() {
     let xml = include_str!("./xsd/attribute_default.xml");
     let expected = schema::Text {
-        value_: "foobar".to_string(),
+        text: "foobar".to_string(),
         lang: None,
     };
     assert_eq!(schema::Text::from_xml(xml).unwrap(), expected);

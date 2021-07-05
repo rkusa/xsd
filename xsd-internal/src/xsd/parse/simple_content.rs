@@ -17,11 +17,14 @@ where
     let extension = children.try_remove("extension", Some(NS_XSD))?;
     children.prevent_unvisited_children()?;
 
-    let attr = extension.try_attribute("base")?;
-    let content = ctx.get_type_name(&attr)?;
-    if let LeafContent::Named(name) = &content {
+    let base = extension.try_attribute("base")?;
+    let content = ctx.get_type_name(&base)?;
+    let leaf_name = if let LeafContent::Named(name) = &content {
         ctx.discover_type(name, Some(parent));
-    }
+        name.clone()
+    } else {
+        parent.clone()
+    };
 
     let mut children = extension.children().namespace(NS_XSD).collect();
 
@@ -37,11 +40,14 @@ where
 
     Ok(ElementDefinition {
         attributes,
-        content: Some(ElementContent::Leaf(LeafDefinition {
-            content,
-            restrictions: Vec::new(),
-            docs: None,
-        })),
+        content: Some(ElementContent::Leaf(
+            leaf_name,
+            LeafDefinition {
+                content,
+                restrictions: Vec::new(),
+                docs: None,
+            },
+        )),
         is_virtual: false,
         docs: None,
     })

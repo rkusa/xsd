@@ -11,7 +11,7 @@ fn choice_selection_optional() {
         thickness: schema::GeometryTypeThickness::Thickness(schema::GeometryTypeThicknessVariant {
             thickness: None,
             thickness_reduction: Some(schema::GeometryTypeThicknessReductionData {
-                value_: true,
+                geometry_type_thickness_reduction_data: true,
                 reference: "shape".to_string(),
             }),
         }),

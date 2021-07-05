@@ -22,15 +22,15 @@ where
     let extension = children.try_remove("extension", Some(NS_XSD))?;
     children.prevent_unvisited_children()?;
 
-    let attr = extension.try_attribute("base")?;
-    let content = ctx.get_type_name(&attr)?;
+    let base = extension.try_attribute("base")?;
+    let content = ctx.get_type_name(&base)?;
     let base_name = match &content {
         LeafContent::Literal(_) | LeafContent::Fixed(_) => {
             return Err(XsdError::UnsupportedAttributeValue {
                 name: "base".to_string(),
-                value: attr.value().to_string(),
+                value: base.value().to_string(),
                 element: "extension".to_string(),
-                range: attr.range(),
+                range: base.range(),
             })
         }
         LeafContent::Named(name) => {
@@ -88,11 +88,14 @@ where
     Ok(ElementDefinition {
         attributes,
         content: Some(if virtual_leaves.is_empty() {
-            ElementContent::Leaf(LeafDefinition {
-                content,
-                restrictions: Vec::new(),
-                docs: None,
-            })
+            ElementContent::Leaf(
+                base_name.clone(),
+                LeafDefinition {
+                    content,
+                    restrictions: Vec::new(),
+                    docs: None,
+                },
+            )
         } else {
             let mut leaves = vec![Leaf {
                 name: ctx.get_node_name("base", false),

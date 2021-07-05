@@ -8,7 +8,7 @@ fn simple_content_custom_base() {
     let xml = include_str!("./xsd/simple_content_custom_base.xml");
     let expected = schema::User {
         role: schema::UserRoleData {
-            value_: schema::Role::User,
+            role: schema::Role::User,
             inherited: true,
         },
     };

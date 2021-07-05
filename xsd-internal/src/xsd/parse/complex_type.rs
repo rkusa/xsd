@@ -102,11 +102,14 @@ where
         );
         ctx.discover_type(&root_name, Some(parent));
 
-        Some(ElementContent::Leaf(LeafDefinition {
-            content: LeafContent::Named(root_name),
-            restrictions: Vec::new(),
-            docs: None,
-        }))
+        Some(ElementContent::Leaf(
+            root_name.clone(),
+            LeafDefinition {
+                content: LeafContent::Named(root_name),
+                restrictions: Vec::new(),
+                docs: None,
+            },
+        ))
     } else {
         None
     };

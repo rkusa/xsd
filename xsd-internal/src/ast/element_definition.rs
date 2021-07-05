@@ -1,6 +1,7 @@
+use crate::ast::{LeafContent, LeafDefinition};
 use crate::xsd::context::SchemaContext;
 
-use super::{Attribute, ElementContent, LeafContent, LeafDefinition};
+use super::{Attribute, ElementContent};
 use proc_macro2::TokenStream;
 use quote::quote;
 use quote::TokenStreamExt;
@@ -37,12 +38,18 @@ impl ElementDefinition {
         for attr in &self.attributes {
             ts.append_all(attr.to_xml_impl(ctx));
         }
+
+        // let the base element (<xs:extension base="" />) do the wrapping so that the base type
+        // is still able to add attributes to the XML element
         let is_named_leaf = matches!(
             self.content,
-            Some(ElementContent::Leaf(LeafDefinition {
-                content: LeafContent::Named(_),
-                ..
-            }))
+            Some(ElementContent::Leaf(
+                _,
+                LeafDefinition {
+                    content: LeafContent::Named(_),
+                    ..
+                },
+            ))
         );
         let wrap = !self.is_virtual && !is_named_leaf;
         if wrap {

@@ -7,7 +7,7 @@ use pretty_assertions::assert_eq;
 fn complex_content() {
     let xml = include_str!("./xsd/complex_content.xml");
     let expected = schema::Account {
-        value_: schema::User {
+        user: schema::User {
             id: 42,
             name: "Foobar".to_string(),
         },
