@@ -22,7 +22,7 @@ where
     let restriction = children.try_remove("restriction", Some(NS_XSD))?;
 
     let attr = restriction.try_attribute("base")?;
-    let type_name = ctx.get_type_name(&attr)?;
+    let type_name = ctx.get_type_name(attr)?;
     let type_ = match type_name {
         LeafContent::Literal(type_) => type_,
         LeafContent::Named(_) | LeafContent::Fixed(_) => {

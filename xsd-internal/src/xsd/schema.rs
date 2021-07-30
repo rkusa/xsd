@@ -115,7 +115,7 @@ impl Schema {
             .or_else(|| root.attribute("targetNamespace").map(|a| a.value()));
 
         let mut ctx = Context::new(
-            &root,
+            root,
             target_namespace.as_deref(),
             shared.unwrap_or_default(),
         );
@@ -242,7 +242,7 @@ impl Schema {
 
         let to_xml = el.to_xml_impl(&self.context);
 
-        let name_xml = self.context.get_xml_element_name(&name);
+        let name_xml = self.context.get_xml_element_name(name);
         let mut element_ns = Vec::new();
         if self.context.is_qualified {
             if let Namespace::Id(id) = self.context.target_namespace {
@@ -297,7 +297,7 @@ impl Schema {
         });
 
         let name_xml = &name.name;
-        let namespace_xml = self.context.quote_xml_namespace(&name);
+        let namespace_xml = self.context.quote_xml_namespace(name);
         let from_xml = el.from_xml_impl(&name_ident, &self.context);
 
         result.append_all(quote! {

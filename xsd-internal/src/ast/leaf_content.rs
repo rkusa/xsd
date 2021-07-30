@@ -15,7 +15,7 @@ impl LeafContent {
     pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         match self {
             LeafContent::Literal(literal) => literal.to_impl(),
-            LeafContent::Named(name) => match ctx.elements.get(&name) {
+            LeafContent::Named(name) => match ctx.elements.get(name) {
                 Some(&Root::Leaf(ref def)) => def.to_impl(ctx),
                 _ => name.to_impl(),
             },
@@ -34,7 +34,7 @@ impl LeafContent {
                     }
                 }
             }
-            LeafContent::Named(name) => match ctx.elements.get(&name) {
+            LeafContent::Named(name) => match ctx.elements.get(name) {
                 Some(&Root::Leaf(ref def)) => def.to_xml_impl(ctx),
                 _ => name.to_xml_impl(),
             },
@@ -55,7 +55,7 @@ impl LeafContent {
                     }
                 }
             }
-            LeafContent::Named(name) => match ctx.elements.get(&name) {
+            LeafContent::Named(name) => match ctx.elements.get(name) {
                 Some(&Root::Leaf(ref def)) => def.from_xml_impl(ctx),
                 _ => name.from_xml_impl(),
             },
@@ -69,7 +69,6 @@ impl LeafContent {
                                 received: val.to_string(),
                             }.into());
                         }
-                        ()
                     }
                 }
             }

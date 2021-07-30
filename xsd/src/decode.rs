@@ -49,7 +49,7 @@ struct Children<'a> {
 }
 
 pub fn decode(input: &str) -> Result<Document<'_>, FromXmlError> {
-    let doc = roxmltree::Document::parse(&input)?;
+    let doc = roxmltree::Document::parse(input)?;
     Ok(Document(doc))
 }
 
@@ -146,6 +146,7 @@ impl<'a> Node<'a> {
             }
         }
 
+        #[allow(clippy::while_let_on_iterator)]
         while let Some(child) = children.children.next() {
             let tag_name = child.tag_name();
             if tag_name.name() == name && tag_name.namespace() == namespace {

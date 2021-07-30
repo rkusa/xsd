@@ -18,7 +18,7 @@ where
     children.prevent_unvisited_children()?;
 
     let base = extension.try_attribute("base")?;
-    let content = ctx.get_type_name(&base)?;
+    let content = ctx.get_type_name(base)?;
     let leaf_name = if let LeafContent::Named(name) = &content {
         ctx.discover_type(name, Some(parent));
         name.clone()

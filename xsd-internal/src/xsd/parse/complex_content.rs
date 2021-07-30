@@ -23,7 +23,7 @@ where
     children.prevent_unvisited_children()?;
 
     let base = extension.try_attribute("base")?;
-    let content = ctx.get_type_name(&base)?;
+    let content = ctx.get_type_name(base)?;
     let base_name = match &content {
         LeafContent::Literal(_) | LeafContent::Fixed(_) => {
             return Err(XsdError::UnsupportedAttributeValue {

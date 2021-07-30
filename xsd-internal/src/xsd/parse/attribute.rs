@@ -39,7 +39,7 @@ where
         }
     } else {
         let type_attr = node.try_attribute("type")?;
-        let mut content = ctx.get_type_name(&type_attr)?;
+        let mut content = ctx.get_type_name(type_attr)?;
         match &mut content {
             LeafContent::Named(name) => ctx.discover_type(name, Some(parent)),
             content @ LeafContent::Literal(_) => {

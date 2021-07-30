@@ -82,7 +82,7 @@ impl<'a, 'b> Context<'a, 'b> {
                     attributes: Cow::Owned(
                         attributes
                             .iter()
-                            .map(|(k, v)| Attribute::new(*k, &v))
+                            .map(|(k, v)| Attribute::new(*k, v))
                             .collect(),
                     ),
                     namespace: Cow::Owned(namespace),
