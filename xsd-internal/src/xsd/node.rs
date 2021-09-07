@@ -175,7 +175,8 @@ impl<'a, 'input> Node<'a, 'input> {
 
     pub fn prevent_unvisited_attributes(&self) -> Result<(), NodeError> {
         for (name, attr) in self.attributes.iter() {
-            if !attr.visited.get() {
+            // ignore custom (aka namespaced) attributes
+            if attr.namespace().is_none() && !attr.visited.get() {
                 return Err(NodeError::UnsupportedAttribute {
                     name: name.to_string(),
                     element: self.name().to_string(),
@@ -225,6 +226,10 @@ impl<'a, 'input> Attribute<'a, 'input> {
         // TODO: this currently always returns a &str, but is internally a Cow, find a way to
         // retrieve the Cow instead of the &str to avoid unnecessary allocations
         Cow::Owned(self.inner.value().to_string())
+    }
+
+    pub fn namespace(&self) -> Option<&str> {
+        self.inner.namespace()
     }
 
     pub fn range(&self) -> Range<usize> {
