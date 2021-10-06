@@ -145,24 +145,7 @@ impl Leaf {
         let mut value = self.definition.from_xml_impl(ctx);
 
         if self.is_virtual {
-            if self.is_optional() {
-                let name = if let LeafContent::Named(name) = &self.definition.content {
-                    name
-                } else {
-                    // unreachable  ...
-                    // TODO: reflect that in the type?
-                    unreachable!()
-                };
-
-                let first_name = format_ident!("{}", name.name.to_pascal_case());
-                value = quote! {
-                    if #first_name::lookahead(node) {
-                        Some(#value)
-                    } else {
-                        None
-                    }
-                };
-            } else if self.is_vec() {
+            if self.is_vec() {
                 let name = if let LeafContent::Named(name) = &self.definition.content {
                     name
                 } else {
@@ -179,6 +162,34 @@ impl Leaf {
                             vec.push(#value);
                         }
                         vec
+                    }
+                };
+
+                if self.is_optional() {
+                    value = quote! {
+                        let val = #value;
+                        if val.is_empty() {
+                            None
+                        } else {
+                            Some(val)
+                        }
+                    }
+                }
+            } else if self.is_optional() {
+                let name = if let LeafContent::Named(name) = &self.definition.content {
+                    name
+                } else {
+                    // unreachable  ...
+                    // TODO: reflect that in the type?
+                    unreachable!()
+                };
+
+                let first_name = format_ident!("{}", name.name.to_pascal_case());
+                value = quote! {
+                    if #first_name::lookahead(node) {
+                        Some(#value)
+                    } else {
+                        None
                     }
                 };
             }

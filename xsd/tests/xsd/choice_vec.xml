@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<user>
+  <id>42</id>
+  <alias>Foo</alias>
+  <email>foo@example.org</email>
+  <email>42@example.org</email>
+</user>
