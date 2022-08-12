@@ -16,10 +16,10 @@ pub struct Leaf {
     pub max_occurs: MaxOccurs,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct MinOccurs(pub u32);
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum MaxOccurs {
     Number(u32),
     Unbounded,

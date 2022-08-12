@@ -67,7 +67,7 @@ impl Schema {
             }
         };
 
-        let base_path = path.parent().unwrap_or_else(|| path.as_path());
+        let base_path = path.parent().unwrap_or(path.as_path());
         let root_node = doc.root_element().into();
         Schema::parse_schema_with_context(&root_node, base_path, None, shared).map_err(|err| {
             match err {
@@ -237,6 +237,7 @@ impl Schema {
         result.append_all(quote! {
             #docs
             #[derive(Debug, Clone, PartialEq)]
+            #[allow(clippy::derive_partial_eq_without_eq)]
             pub #kind #name_ident#declaration
         });
 

@@ -12,7 +12,7 @@ pub struct LeafDefinition {
     pub docs: Option<String>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Restriction {
     Length(usize),
     MinLength(usize),

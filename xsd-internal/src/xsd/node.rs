@@ -309,7 +309,7 @@ impl<'a, 'input, 'b> ChildrenFilterBuilder<'a, 'input, 'b> {
                 if let (Some(name), Some(value)) =
                     (self.filter.attribute_name, self.filter.attribute_value)
                 {
-                    return child.attribute(name).as_deref() == Some(value);
+                    return child.attribute(name) == Some(value);
                 }
 
                 true
