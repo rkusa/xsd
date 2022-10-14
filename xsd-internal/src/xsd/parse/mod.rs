@@ -48,7 +48,7 @@ where
     let mut virtual_name = String::new();
     for name in names.into_iter() {
         if !name.name.is_empty() {
-            virtual_name += (&name.name[0..1]).to_ascii_uppercase().as_str();
+            virtual_name += name.name[0..1].to_ascii_uppercase().as_str();
             virtual_name += &name.name[1..];
         }
     }

@@ -238,7 +238,7 @@ impl Schema {
             #docs
             #[derive(Debug, Clone, PartialEq)]
             #[allow(clippy::derive_partial_eq_without_eq)]
-            pub #kind #name_ident#declaration
+            pub #kind #name_ident #declaration
         });
 
         let to_xml = el.to_xml_impl(&self.context);
@@ -289,7 +289,7 @@ impl Schema {
                 ) -> Result<(), ::xsd::xml::writer::Error> {
                     use ::xsd::xml::writer::events::XmlEvent;
 
-                    #(ctx#element_ns;)*
+                    #(ctx #element_ns;)*
                     #to_xml
 
                     Ok(())

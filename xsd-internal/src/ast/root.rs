@@ -255,14 +255,14 @@ impl Root {
                 quote! {
                     {
                         let val = node.text()?;
-                       ::std::str::FromStr::from_str(val)?
+                        ::std::str::FromStr::from_str(val)?
                     }
                 }
             }
             Root::Element(def) => {
                 let inner = def.from_xml_impl(ctx);
                 quote! {
-                    #name#inner
+                    #name #inner
                 }
             }
             Root::Choice(ChoiceDefinition { variants, .. }) => {
