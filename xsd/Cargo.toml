@@ -5,7 +5,7 @@ authors = ["Markus Ast <m@rkusa.st>"]
 edition = "2018"
 
 [dependencies]
-roxmltree = "0.14"
+roxmltree = "0.15"
 thiserror = "1.0"
 xsd-derive = { path = "../xsd-derive" }
 xsd-internal = { path = "../xsd-internal" }
