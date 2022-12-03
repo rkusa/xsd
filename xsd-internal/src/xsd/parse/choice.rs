@@ -60,7 +60,7 @@ where
             child_name => {
                 return Err(XsdError::UnsupportedElement {
                     name: child_name.to_string(),
-                    range: child.range(),
+                    position: child.position(),
                 })
             }
         };

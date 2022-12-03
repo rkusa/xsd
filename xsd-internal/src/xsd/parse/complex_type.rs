@@ -21,7 +21,7 @@ where
             name: "mixed".to_string(),
             value: "true".to_string(),
             element: node.name().to_string(),
-            range: node.range(),
+            position: node.position(),
         });
     }
     node.prevent_unvisited_attributes()?;

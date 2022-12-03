@@ -17,7 +17,7 @@ where
         "simpleType" => super::simple_type::parse(node, ctx),
         child_name => Err(XsdError::UnsupportedElement {
             name: child_name.to_string(),
-            range: node.range(),
+            position: node.position(),
         }),
     }
 }

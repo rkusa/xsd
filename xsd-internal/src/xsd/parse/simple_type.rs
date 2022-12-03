@@ -30,7 +30,7 @@ where
                 name: "base".to_string(),
                 value: attr.value().to_string(),
                 element: "restriction".to_string(),
-                range: attr.range(),
+                position: attr.position(),
             });
         }
     };
@@ -52,7 +52,7 @@ where
                 let attr = child.try_attribute("value")?;
                 let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
                     err,
-                    range: attr.range(),
+                    position: attr.position(),
                 })?;
                 restrictions.push(Restriction::Length(value));
             }
@@ -60,7 +60,7 @@ where
                 let attr = child.try_attribute("value")?;
                 let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
                     err,
-                    range: attr.range(),
+                    position: attr.position(),
                 })?;
                 restrictions.push(Restriction::MinLength(value));
             }
@@ -68,7 +68,7 @@ where
                 let attr = child.try_attribute("value")?;
                 let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
                     err,
-                    range: attr.range(),
+                    position: attr.position(),
                 })?;
                 restrictions.push(Restriction::MaxLength(value));
             }
@@ -80,7 +80,7 @@ where
                 let value =
                     Decimal::from_str(&attr.value()).map_err(|err| XsdError::ParseDecimal {
                         err,
-                        range: attr.range(),
+                        position: attr.position(),
                     })?;
                 restrictions.push(Restriction::MinInclusive(value));
             }
@@ -89,7 +89,7 @@ where
                 let value =
                     Decimal::from_str(&attr.value()).map_err(|err| XsdError::ParseDecimal {
                         err,
-                        range: attr.range(),
+                        position: attr.position(),
                     })?;
                 restrictions.push(Restriction::MaxInclusive(value));
             }
@@ -97,7 +97,7 @@ where
                 let attr = child.try_attribute("value")?;
                 let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
                     err,
-                    range: attr.range(),
+                    position: attr.position(),
                 })?;
                 restrictions.push(Restriction::FractionDigits(value));
             }
@@ -105,14 +105,14 @@ where
                 let attr = child.try_attribute("value")?;
                 let value = usize::from_str(&attr.value()).map_err(|err| XsdError::ParseInt {
                     err,
-                    range: attr.range(),
+                    position: attr.position(),
                 })?;
                 restrictions.push(Restriction::TotalDigits(value));
             }
             child_name => {
                 return Err(XsdError::UnsupportedElement {
                     name: child_name.to_string(),
-                    range: child.range(),
+                    position: child.position(),
                 })
             }
         }

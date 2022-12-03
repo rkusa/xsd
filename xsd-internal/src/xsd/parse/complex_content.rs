@@ -30,7 +30,7 @@ where
                 name: "base".to_string(),
                 value: base.value().to_string(),
                 element: "extension".to_string(),
-                range: base.range(),
+                position: base.position(),
             })
         }
         LeafContent::Named(name) => {
