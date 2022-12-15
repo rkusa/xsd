@@ -27,6 +27,7 @@ pub struct SharedContext {
 }
 
 /// The context reduced to the data necessary for the code-generation.
+#[derive(Debug)]
 pub struct SchemaContext {
     pub elements: HashMap<Name, Root>,
     pub target_namespace: Namespace,

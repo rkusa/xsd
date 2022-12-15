@@ -15,6 +15,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
 use roxmltree::{Document, TextPos};
 
+#[derive(Debug)]
 pub struct Schema {
     pub(crate) dependencies: HashMap<Name, HashSet<Name>>,
     pub(crate) context: SchemaContext,

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="shape">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element name="points" minOccurs="1" maxOccurs="unbounded" type="xs:string" />
+          <xs:element name="lines" minOccurs="1" maxOccurs="unbounded" type="xs:string" />
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

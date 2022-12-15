@@ -39,7 +39,7 @@ impl Leaf {
         self.min_occurs == MinOccurs(0)
     }
 
-    fn is_vec(&self) -> bool {
+    pub fn is_vec(&self) -> bool {
         match self.max_occurs {
             MaxOccurs::Unbounded => true,
             MaxOccurs::Number(n) if n > 1 => true,

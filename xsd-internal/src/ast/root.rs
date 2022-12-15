@@ -145,9 +145,12 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let type_name = variant.definition.to_impl(ctx);
+                    let mut type_ident = variant.definition.to_impl(ctx);
+                    if variant.is_vec() {
+                        type_ident = quote! { Vec<#type_ident> }
+                    }
                     quote! {
-                        #variant_name(#type_name)
+                        #variant_name(#type_ident)
                     }
                 });
 
@@ -207,18 +210,29 @@ impl Root {
                     let name_xml = &variant.name.name;
                     let inner = variant.definition.to_xml_impl(ctx);
                     let is_literal = matches!(variant.definition.content, LeafContent::Literal(_));
-                    let inner = if is_literal {
+                    let mut inner = if is_literal {
                         quote! {
+                            let mut ctx = ::xsd::Context::new(#name_xml);
                             ctx.write_start_element(writer)?;
                             #inner
                             ctx.write_end_element(writer)?;
                         }
                     } else {
-                        inner
+                        quote! {
+                            let mut ctx = ::xsd::Context::new(#name_xml);
+                            #inner
+                        }
                     };
+                    if variant.is_vec() {
+                        inner = quote! {
+                            for val in val {
+                                #inner
+                            }
+                        };
+                    }
+
                     quote! {
                         Self::#variant_name(val) => {
-                            let mut ctx = ::xsd::Context::new(#name_xml);
                             #inner
                         }
                     }
@@ -286,9 +300,22 @@ impl Root {
                             unreachable!()
                         }
                     } else {
-                        quote! {
-                            if let Some(node) = node.next_child(#name_xml, #namespace_xml) {
-                                Self::#variant_name(#inner)
+                        #[allow(clippy::collapsible_else_if)]
+                        if variant.is_vec() {
+                            quote! {
+                                if node.peek_child(#name_xml, #namespace_xml) {
+                                    let mut vec = Vec::new();
+                                    while let Some(node) = node.next_child(#name_xml, #namespace_xml) {
+                                        vec.push(#inner);
+                                    }
+                                    Self::#variant_name(vec)
+                                }
+                            }
+                        } else {
+                            quote! {
+                                if let Some(node) = node.next_child(#name_xml, #namespace_xml) {
+                                    Self::#variant_name(#inner)
+                                }
                             }
                         }
                     }
