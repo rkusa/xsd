@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::io;
@@ -32,7 +31,7 @@ impl Schema {
     ) -> Result<Self, SchemaError> {
         let path = path.as_ref();
 
-        let data = match read_to_string(&path) {
+        let data = match read_to_string(path) {
             Ok(data) => data,
             Err(err) => {
                 return Err(SchemaError::Open {
@@ -70,37 +69,30 @@ impl Schema {
 
         let base_path = path.parent().unwrap_or(path.as_path());
         let root_node = doc.root_element().into();
-        Schema::parse_schema_with_context(&root_node, base_path, None, shared).map_err(|err| {
-            match err {
-                ParseError::Schema(err) => err,
-                ParseError::Xsd(err) => {
-                    let pos = err
-                        .range()
-                        .map(|range| doc.text_pos_at(range.start))
-                        .unwrap_or_else(|| TextPos { row: 0, col: 0 });
-                    SchemaError::Xsd {
-                        file: path.to_string_lossy().to_string(),
-                        row: pos.row,
-                        col: pos.col,
-                        err: Box::new(err),
-                    }
+        Schema::parse_schema_with_context(&root_node, base_path, shared).map_err(|err| match err {
+            ParseError::Schema(err) => err,
+            ParseError::Xsd(err) => {
+                let pos = err
+                    .range()
+                    .map(|range| doc.text_pos_at(range.start))
+                    .unwrap_or_else(|| TextPos { row: 0, col: 0 });
+                SchemaError::Xsd {
+                    file: path.to_string_lossy().to_string(),
+                    row: pos.row,
+                    col: pos.col,
+                    err: Box::new(err),
                 }
             }
         })
     }
 
-    pub fn parse_schema(
-        root: &Node<'_, '_>,
-        base_path: &Path,
-        target_namespace: Option<&str>,
-    ) -> Result<Self, ParseError> {
-        Self::parse_schema_with_context(root, base_path, target_namespace, None)
+    pub fn parse_schema(root: &Node<'_, '_>, base_path: &Path) -> Result<Self, ParseError> {
+        Self::parse_schema_with_context(root, base_path, None)
     }
 
     fn parse_schema_with_context(
         root: &Node<'_, '_>,
         base_path: &Path,
-        target_namespace: Option<&str>,
         shared: Option<SharedContext>,
     ) -> Result<Self, ParseError> {
         if root.namespace().as_deref() != Some(NS_XSD) || root.name() != "schema" {
@@ -111,9 +103,7 @@ impl Schema {
             .into());
         }
 
-        let target_namespace = target_namespace
-            .map(Cow::Borrowed)
-            .or_else(|| root.attribute("targetNamespace").map(|a| a.value()));
+        let target_namespace = root.attribute("targetNamespace").map(|a| a.value());
 
         let mut ctx = Context::new(
             root,
