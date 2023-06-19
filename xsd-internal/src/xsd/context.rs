@@ -114,14 +114,14 @@ impl<'input> Context<'input> {
                 let ns = self.document_namespaces.get(prefix).ok_or_else(|| {
                     XsdError::MissingNamespace {
                         prefix: prefix.to_string(),
-                        position: attr.position(),
+                        range: attr.range(),
                     }
                 })?;
                 return if *ns == NS_XSD {
                     Ok(LeafContent::Literal(literal_from_str(name).ok_or_else(
                         || XsdError::UnsupportedType {
                             name: name.to_string(),
-                            position: attr.position(),
+                            range: attr.range(),
                         },
                     )?))
                 } else {
@@ -138,7 +138,7 @@ impl<'input> Context<'input> {
             Ok(LeafContent::Literal(literal_from_str(name).ok_or_else(
                 || XsdError::UnsupportedType {
                     name: name.to_string(),
-                    position: attr.position(),
+                    range: attr.range(),
                 },
             )?))
         } else {

@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::VecDeque;
+use std::ops::Range;
 
 use thiserror::Error;
 
@@ -186,7 +187,7 @@ impl<'a> Node<'a> {
         }
     }
 
-    pub fn position(&self) -> usize {
-        self.node.position()
+    pub fn range(&self) -> Range<usize> {
+        self.node.range()
     }
 }

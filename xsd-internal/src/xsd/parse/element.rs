@@ -50,7 +50,7 @@ where
             return Err(XsdError::MissingElement {
                 name: "simpleType|complexType".to_string(),
                 parent: node.name().to_string(),
-                position: node.position(),
+                range: node.range(),
             });
         };
 
@@ -94,7 +94,7 @@ where
                 name: "ref".to_string(),
                 value: attr.value().to_string(),
                 element: "element".to_string(),
-                position: attr.position(),
+                range: attr.range(),
             });
         }
     }
@@ -188,7 +188,7 @@ pub fn parse_min_occurs(occurs: Option<&Attribute<'_, '_>>) -> Result<MinOccurs,
         Some(attr) => Ok(MinOccurs(u32::from_str(&attr.value()).map_err(|err| {
             XsdError::ParseInt {
                 err,
-                position: attr.position(),
+                range: attr.range(),
             }
         })?)),
         None => Ok(MinOccurs::default()),
@@ -205,7 +205,7 @@ pub fn parse_max_occurs(occurs: Option<&Attribute<'_, '_>>) -> Result<MaxOccurs,
                 Ok(MaxOccurs::Number(u32::from_str(&val).map_err(|err| {
                     XsdError::ParseInt {
                         err,
-                        position: attr.position(),
+                        range: attr.range(),
                     }
                 })?))
             }

@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 #[derive(Debug, thiserror::Error)]
 pub enum XsdError {
     #[error("XML parsing error: {0}")]
@@ -7,66 +9,66 @@ pub enum XsdError {
     #[error("Error traversing XML tree: {0}")]
     Node(#[from] super::node::NodeError),
     #[error("Encountered unsupported element `{name}` at that location")]
-    UnsupportedElement { name: String, position: usize },
+    UnsupportedElement { name: String, range: Range<usize> },
     #[error("Encountered unsupported value `{value}` for attribute `{name}` in `{element}`")]
     UnsupportedAttributeValue {
         name: String,
         value: String,
         element: String,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Encountered unexpected attribute `{name}` in `{element}`")]
     UnexpectedAttribute {
         name: String,
         element: String,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Missing element `{name}` in `{parent}`")]
     MissingElement {
         name: String,
         parent: String,
-        position: usize,
+        range: Range<usize>,
     },
     // #[error("Missing attribute `{name}` in `{element}`")]
     // MissingAttribute {
     //     name: String,
     //     element: String,
-    //     position: usize,
+    //     range: Range<usize>,
     // },
     #[error("Missing namespace for `{prefix}`")]
-    MissingNamespace { prefix: String, position: usize },
+    MissingNamespace { prefix: String, range: Range<usize> },
     // #[error("Multiple types found inside `{name}`")]
-    // MultipleTypes { name: String, position: usize },
+    // MultipleTypes { name: String, range: Range<usize> },
     #[error("Failed to parse int value")]
     ParseInt {
         err: std::num::ParseIntError,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Failed to parse decimal value")]
     ParseDecimal {
         err: rust_decimal::Error,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Unsupported XSD type {name}")]
-    UnsupportedType { name: String, position: usize },
+    UnsupportedType { name: String, range: Range<usize> },
 }
 
 impl XsdError {
-    pub fn position(&self) -> Option<usize> {
+    pub fn range(&self) -> Option<&Range<usize>> {
         match self {
             XsdError::Xml(_) => None,
             // XsdError::Import(_) => None,
-            XsdError::Node(err) => err.position(),
-            XsdError::UnsupportedElement { position, .. } => Some(*position),
-            XsdError::UnsupportedAttributeValue { position, .. } => Some(*position),
-            XsdError::UnexpectedAttribute { position, .. } => Some(*position),
-            XsdError::MissingElement { position, .. } => Some(*position),
-            // XsdError::MissingAttribute { position, .. } => Some(*position),
-            XsdError::MissingNamespace { position, .. } => Some(*position),
-            // XsdError::MultipleTypes { position, .. } => Some(*position),
-            XsdError::ParseInt { position, .. } => Some(*position),
-            XsdError::ParseDecimal { position, .. } => Some(*position),
-            XsdError::UnsupportedType { position, .. } => Some(*position),
+            XsdError::Node(err) => err.range(),
+            XsdError::UnsupportedElement { range, .. } => Some(range),
+            XsdError::UnsupportedAttributeValue { range, .. } => Some(range),
+            XsdError::UnexpectedAttribute { range, .. } => Some(range),
+            XsdError::MissingElement { range, .. } => Some(range),
+            // XsdError::MissingAttribute { range, .. } => Some(range),
+            XsdError::MissingNamespace { range, .. } => Some(range),
+            // XsdError::MultipleTypes { range, .. } => Some(range),
+            XsdError::ParseInt { range, .. } => Some(range),
+            XsdError::ParseDecimal { range, .. } => Some(range),
+            XsdError::UnsupportedType { range, .. } => Some(range),
         }
     }
 }

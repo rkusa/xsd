@@ -10,15 +10,30 @@ use proc_macro::TokenStream;
 #[proc_macro_attribute]
 pub fn all(args: TokenStream, item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as syn::ItemMod);
-    let args = syn::parse_macro_input!(args as syn::AttributeArgs);
+
+    let mut schema_path: Option<String> = None;
+    let args_parser = syn::meta::parser(|meta| {
+        if meta.path.is_ident("schema") {
+            let value: syn::LitStr = meta.value()?.parse()?;
+            schema_path = Some(value.value());
+            Ok(())
+        } else {
+            Err(meta.error("unsupported property"))
+        }
+    });
+    syn::parse_macro_input!(args with args_parser);
 
     // TODO: restrict to only one element attribute
     // TODO: validate provided arguments
 
-    generate(input, args).unwrap_or_else(|e| e.to_compile_error().into())
+    let Some(schema_path) = schema_path
+    else {
+        return syn::Error::new_spanned(&input, "Argument `schema` required").to_compile_error().into();
+    };
+    generate(input, schema_path).unwrap_or_else(|e| e.to_compile_error().into())
 }
 
-fn generate(input: syn::ItemMod, args: syn::AttributeArgs) -> Result<TokenStream, syn::Error> {
+fn generate(input: syn::ItemMod, schema_path: String) -> Result<TokenStream, syn::Error> {
     // let sig = &input.sig;
     // let attrs = &input.attrs;
     // let vis = input.vis;
@@ -37,30 +52,6 @@ fn generate(input: syn::ItemMod, args: syn::AttributeArgs) -> Result<TokenStream
     //         "XSD element struct must not have generics",
     //     ));
     // }
-
-    let schema_path = {
-        let mut schema_path = None;
-
-        for arg in args {
-            match arg {
-                syn::NestedMeta::Meta(syn::Meta::NameValue(nv)) => {
-                    let path = if let syn::Lit::Str(path) = nv.lit {
-                        path.value()
-                    } else {
-                        return Err(syn::Error::new_spanned(nv.lit, "Expected path"));
-                    };
-                    if nv.path.is_ident("schema") {
-                        schema_path = Some(path);
-                    } else {
-                        return Err(syn::Error::new_spanned(nv.path, "Unknown attribute name"));
-                    }
-                }
-                other => return Err(syn::Error::new_spanned(other, "Unsupported attribute")),
-            }
-        }
-
-        schema_path.ok_or_else(|| syn::Error::new_spanned(&input, "Argument `schema` required"))?
-    };
 
     let mut path = PathBuf::from(
         env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR env to be defined"),

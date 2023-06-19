@@ -14,7 +14,7 @@ pub enum NodeError {
     MissingElement {
         name: String,
         namespace: Option<String>,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Cannot find element for filter: {element_name:?}, {element_namespace:?}, {attribute_name:?}, {attribute_name:?}")]
     ElementNotFound {
@@ -22,30 +22,30 @@ pub enum NodeError {
         element_namespace: Option<String>,
         attribute_name: Option<String>,
         attribute_value: Option<String>,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Missing required attribute `{name}` on element `{element}`")]
     MissingAttribute {
         name: String,
         element: String,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Expected element {name} to contain text content")]
-    TextExpected { name: String, position: usize },
+    TextExpected { name: String, range: Range<usize> },
     #[error("Encountered unsupported attribute `{name}` in `{element}`")]
     UnsupportedAttribute {
         name: String,
         element: String,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Encountered unsupported element `{name}` in `{parent}`")]
     UnsupportedElement {
         name: String,
         parent: String,
-        position: usize,
+        range: Range<usize>,
     },
     #[error("Could not find namespace for URI {uri}")]
-    MissingNamespace { uri: String, position: usize },
+    MissingNamespace { uri: String, range: Range<usize> },
 }
 
 #[derive(Clone)]
@@ -101,8 +101,8 @@ impl<'a, 'input> Node<'a, 'input> {
             .map(|v| Cow::Owned(v.to_string()))
     }
 
-    pub fn position(&self) -> usize {
-        self.inner.position()
+    pub fn range(&self) -> Range<usize> {
+        self.inner.range()
     }
 
     pub fn child(&self, name: &str, namespace: Option<&str>) -> Option<Node<'a, 'input>> {
@@ -128,7 +128,7 @@ impl<'a, 'input> Node<'a, 'input> {
             .ok_or_else(|| NodeError::MissingElement {
                 name: name.to_string(),
                 namespace: namespace.map(String::from),
-                position: self.position(),
+                range: self.range(),
             })
     }
 
@@ -151,7 +151,7 @@ impl<'a, 'input> Node<'a, 'input> {
             .ok_or_else(|| NodeError::MissingAttribute {
                 name: name.to_string(),
                 element: self.name().to_string(),
-                position: self.position(),
+                range: self.range(),
             })
     }
 
@@ -168,7 +168,7 @@ impl<'a, 'input> Node<'a, 'input> {
     pub fn try_text(&self) -> Result<Cow<'input, str>, NodeError> {
         self.text().ok_or_else(|| NodeError::TextExpected {
             name: self.name().to_string(),
-            position: self.position(),
+            range: self.range(),
         })
     }
 
@@ -179,7 +179,7 @@ impl<'a, 'input> Node<'a, 'input> {
                 return Err(NodeError::UnsupportedAttribute {
                     name: name.to_string(),
                     element: self.name().to_string(),
-                    position: attr.position(),
+                    range: attr.range(),
                 });
             }
         }
@@ -196,7 +196,7 @@ impl<'a, 'input> Node<'a, 'input> {
             }
             None => Err(NodeError::MissingNamespace {
                 uri: uri.to_string(),
-                position: self.inner.position(),
+                range: self.inner.range(),
             }),
         }
     }
@@ -210,7 +210,7 @@ impl<'a, 'input> Node<'a, 'input> {
             }
             None => Err(NodeError::MissingNamespace {
                 uri: prefix.to_string(),
-                position: self.inner.position(),
+                range: self.inner.range(),
             }),
         }
     }
@@ -231,22 +231,26 @@ impl<'a, 'input> Attribute<'a, 'input> {
         self.inner.namespace()
     }
 
-    pub fn position(&self) -> usize {
-        self.inner.position()
+    pub fn range(&self) -> Range<usize> {
+        let pos = self.inner.position();
+        Range {
+            start: pos,
+            end: pos,
+        }
     }
 }
 
 impl NodeError {
-    pub fn position(&self) -> Option<usize> {
+    pub fn range(&self) -> Option<&Range<usize>> {
         use NodeError::*;
         match self {
-            MissingElement { position, .. } => Some(*position),
-            ElementNotFound { position, .. } => Some(*position),
-            MissingAttribute { position, .. } => Some(*position),
-            MissingNamespace { position, .. } => Some(*position),
-            TextExpected { position, .. } => Some(*position),
-            UnsupportedAttribute { position, .. } => Some(*position),
-            UnsupportedElement { position, .. } => Some(*position),
+            MissingElement { range, .. } => Some(range),
+            ElementNotFound { range, .. } => Some(range),
+            MissingAttribute { range, .. } => Some(range),
+            MissingNamespace { range, .. } => Some(range),
+            TextExpected { range, .. } => Some(range),
+            UnsupportedAttribute { range, .. } => Some(range),
+            UnsupportedElement { range, .. } => Some(range),
         }
     }
 }
@@ -318,7 +322,7 @@ impl<'a, 'input, 'b> ChildrenFilterBuilder<'a, 'input, 'b> {
 
     pub fn try_find(self) -> Result<Node<'a, 'input>, NodeError> {
         let filter = self.filter.clone();
-        let position = self.node.position();
+        let range = self.node.range();
         self.iter()
             .next()
             .ok_or_else(|| NodeError::ElementNotFound {
@@ -326,7 +330,7 @@ impl<'a, 'input, 'b> ChildrenFilterBuilder<'a, 'input, 'b> {
                 element_namespace: filter.element_namespace.map(String::from),
                 attribute_name: filter.attribute_name.map(String::from),
                 attribute_value: filter.attribute_value.map(String::from),
-                position,
+                range,
             })
     }
 
@@ -367,7 +371,7 @@ impl<'a, 'input, 'b> Children<'a, 'input, 'b> {
             .ok_or_else(|| NodeError::MissingElement {
                 name: name.to_string(),
                 namespace: namespace.map(String::from),
-                position: self.node.position(),
+                range: self.node.range(),
             })
     }
 
@@ -376,7 +380,7 @@ impl<'a, 'input, 'b> Children<'a, 'input, 'b> {
             return Err(NodeError::UnsupportedElement {
                 name: child.name().to_string(),
                 parent: self.node.name().to_string(),
-                position: child.position(),
+                range: child.range(),
             });
         }
 

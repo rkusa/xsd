@@ -65,7 +65,7 @@ where
                 name: "use".to_string(),
                 value: val.to_owned(),
                 element: node.name().to_string(),
-                position: node.position(),
+                range: node.range(),
             })
         }
     };
@@ -73,7 +73,7 @@ where
         return Err(XsdError::UnexpectedAttribute {
             name: "default".to_string(),
             element: node.name().to_string(),
-            position: node.position(),
+            range: node.range(),
         });
     }
 

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::io;
+use std::ops::Range;
 use std::{collections::HashMap, path::Path};
 
 use super::context::{Context, SchemaContext, SharedContext, NS_XSD};
@@ -72,8 +73,8 @@ impl Schema {
             ParseError::Schema(err) => err,
             ParseError::Xsd(err) => {
                 let pos = err
-                    .position()
-                    .map(|pos| doc.text_pos_at(pos))
+                    .range()
+                    .map(|range| doc.text_pos_at(range.start))
                     .unwrap_or_else(|| TextPos { row: 0, col: 0 });
                 SchemaError::Xsd {
                     file: path.to_string_lossy().to_string(),
@@ -97,7 +98,7 @@ impl Schema {
         if root.namespace().as_deref() != Some(NS_XSD) || root.name() != "schema" {
             return Err(XsdError::UnsupportedElement {
                 name: root.name().to_string(),
-                position: root.position(),
+                range: root.range(),
             }
             .into());
         }
@@ -359,10 +360,10 @@ impl From<super::node::NodeError> for ParseError {
 }
 
 impl ParseError {
-    pub fn position(&self) -> Option<usize> {
+    pub fn range(&self) -> Option<&Range<usize>> {
         match self {
             ParseError::Schema(_) => None,
-            ParseError::Xsd(err) => err.position(),
+            ParseError::Xsd(err) => err.range(),
         }
     }
 }
