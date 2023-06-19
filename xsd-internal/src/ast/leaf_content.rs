@@ -16,7 +16,7 @@ impl LeafContent {
         match self {
             LeafContent::Literal(literal) => literal.to_impl(),
             LeafContent::Named(name) => match ctx.elements.get(name) {
-                Some(&Root::Leaf(ref def)) => def.to_impl(ctx),
+                Some(Root::Leaf(def)) => def.to_impl(ctx),
                 _ => name.to_impl(),
             },
             LeafContent::Fixed(_) => quote!(()),
@@ -35,7 +35,7 @@ impl LeafContent {
                 }
             }
             LeafContent::Named(name) => match ctx.elements.get(name) {
-                Some(&Root::Leaf(ref def)) => def.to_xml_impl(ctx),
+                Some(Root::Leaf(def)) => def.to_xml_impl(ctx),
                 _ => name.to_xml_impl(),
             },
             LeafContent::Fixed(fixed) => quote! {
@@ -56,7 +56,7 @@ impl LeafContent {
                 }
             }
             LeafContent::Named(name) => match ctx.elements.get(name) {
-                Some(&Root::Leaf(ref def)) => def.from_xml_impl(ctx),
+                Some(Root::Leaf(def)) => def.from_xml_impl(ctx),
                 _ => name.from_xml_impl(),
             },
             LeafContent::Fixed(fixed) => {

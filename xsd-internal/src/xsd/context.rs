@@ -102,9 +102,9 @@ impl<'input> Context<'input> {
         )
     }
 
-    pub fn get_type_name<'b, 'c>(
+    pub fn get_type_name(
         &mut self,
-        attr: &Attribute<'b, 'c>,
+        attr: &Attribute<'_, '_>,
     ) -> Result<LeafContent, XsdError> {
         let type_name = attr.value();
         let mut parts = type_name.splitn(2, ':');
