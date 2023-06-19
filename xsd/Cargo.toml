@@ -3,6 +3,7 @@ name = "xsd"
 version = "0.1.0"
 authors = ["Markus Ast <m@rkusa.st>"]
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 roxmltree = "0.18"
