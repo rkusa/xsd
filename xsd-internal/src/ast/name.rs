@@ -4,15 +4,12 @@ use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Namespace {
     #[default]
     None,
     Id(usize),
 }
-
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Name {
