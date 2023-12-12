@@ -26,9 +26,10 @@ pub fn all(args: TokenStream, item: TokenStream) -> TokenStream {
     // TODO: restrict to only one element attribute
     // TODO: validate provided arguments
 
-    let Some(schema_path) = schema_path
-    else {
-        return syn::Error::new_spanned(&input, "Argument `schema` required").to_compile_error().into();
+    let Some(schema_path) = schema_path else {
+        return syn::Error::new_spanned(&input, "Argument `schema` required")
+            .to_compile_error()
+            .into();
     };
     generate(input, schema_path).unwrap_or_else(|e| e.to_compile_error().into())
 }

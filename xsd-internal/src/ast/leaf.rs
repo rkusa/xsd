@@ -61,7 +61,7 @@ impl Leaf {
             .docs
             .as_deref()
             .map(|docs| quote! { #[doc = #docs] })
-            .unwrap_or_else(TokenStream::new);
+            .unwrap_or_default();
         quote! {
             #docs
             pub #name_ident: #type_ident
