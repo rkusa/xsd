@@ -60,6 +60,7 @@ impl Leaf {
             .definition
             .docs
             .as_deref()
+            .filter(|docs| !docs.is_empty())
             .map(|docs| quote! { #[doc = #docs] })
             .unwrap_or_default();
         quote! {

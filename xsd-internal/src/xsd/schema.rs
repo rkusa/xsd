@@ -222,6 +222,7 @@ impl Schema {
         let declaration = &el.to_declaration(&name_ident, &self.context);
         let docs = el
             .docs()
+            .filter(|docs| !docs.is_empty())
             .map(|docs| quote! { #[doc = #docs] })
             .unwrap_or_else(TokenStream::new);
 

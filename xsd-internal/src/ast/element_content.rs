@@ -20,6 +20,7 @@ impl ElementContent {
                 let docs = definition
                     .docs
                     .as_ref()
+                    .filter(|docs| !docs.is_empty())
                     .map(|docs| quote! { #[doc = #docs] })
                     .unwrap_or_else(TokenStream::new);
                 let inner = definition.to_impl(ctx);
