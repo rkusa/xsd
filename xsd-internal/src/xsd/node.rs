@@ -232,11 +232,7 @@ impl<'a, 'input> Attribute<'a, 'input> {
     }
 
     pub fn range(&self) -> Range<usize> {
-        let pos = self.inner.position();
-        Range {
-            start: pos,
-            end: pos,
-        }
+        self.inner.range()
     }
 }
 

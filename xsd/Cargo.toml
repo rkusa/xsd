@@ -6,7 +6,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-roxmltree = "0.19"
+roxmltree = "0.20"
 thiserror = "1.0"
 xsd-derive = { path = "../xsd-derive" }
 xsd-internal = { path = "../xsd-internal" }
