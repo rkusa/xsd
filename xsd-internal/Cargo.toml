@@ -11,4 +11,4 @@ quote = "1.0"
 roxmltree = "0.20"
 rust_decimal = { version = "1.6", default-features = false, features = ["std"] }
 syn = { version = "2.0", features = ["full"] }
-thiserror = "1.0"
+thiserror = "2.0"
