@@ -53,7 +53,7 @@ pub fn decode(input: &str) -> Result<Document<'_>, FromXmlError> {
     Ok(Document(doc))
 }
 
-impl<'a> Document<'a> {
+impl Document<'_> {
     pub fn child(&self, name: &str, namespace: Option<&str>) -> Option<Node<'_>> {
         let root = self.0.root_element();
         let tag_name = root.tag_name();

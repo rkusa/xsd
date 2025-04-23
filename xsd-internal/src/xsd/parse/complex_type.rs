@@ -1,12 +1,12 @@
 use crate::ast::{
-    ChoiceDefinition, ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition,
-    MinOccurs, Name, Root,
+    ChoiceDefinition, ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name,
+    Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::error::XsdError;
 use crate::xsd::node::Node;
 
-use super::element::parse_max_occurs;
+use super::element::{parse_max_occurs, parse_min_occurs};
 
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
@@ -49,6 +49,7 @@ where
         .or_else(|| children.remove("all", Some(NS_XSD)))
     {
         let is_unordered = child.name() == "all";
+        let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
         let max_occurs = parse_max_occurs(child.attribute("maxOccurs"))?;
         let mut leaves = super::sequence::parse(child, parent, ctx)?;
         if is_unordered {
@@ -57,7 +58,7 @@ where
             }
         }
 
-        if max_occurs.is_vec() {
+        if max_occurs.is_vec() || min_occurs != Default::default() {
             let leaf_name = super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
             let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
 
@@ -81,7 +82,7 @@ where
                 },
                 is_unordered: false,
                 is_virtual: true,
-                min_occurs: MinOccurs::default(),
+                min_occurs,
                 max_occurs,
             }]))
         } else {

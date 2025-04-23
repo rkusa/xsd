@@ -1,10 +1,11 @@
 use crate::ast::{
-    ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, MaxOccurs, MinOccurs,
-    Name, Root,
+    ElementContent, ElementDefinition, Leaf, LeafContent, LeafDefinition, Name, Root,
 };
 use crate::xsd::context::{Context, NS_XSD};
 use crate::xsd::error::XsdError;
 use crate::xsd::node::Node;
+
+use super::element::{parse_max_occurs, parse_min_occurs};
 
 pub fn parse<'a, 'input>(
     node: Node<'a, 'input>,
@@ -22,6 +23,8 @@ where
             "element" => super::element::parse_child(child, parent, ctx)?,
             "sequence" => {
                 let docs = super::parse_annotation(child.child("annotation", Some(NS_XSD)))?;
+                let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
+                let max_occurs = parse_max_occurs(child.attribute("maxOccurs"))?;
 
                 let leaves = super::sequence::parse(child, parent, ctx)?;
                 let leaf_name =
@@ -52,8 +55,8 @@ where
                     },
                     is_unordered: false,
                     is_virtual: true,
-                    min_occurs: MinOccurs::default(),
-                    max_occurs: MaxOccurs::default(),
+                    min_occurs,
+                    max_occurs,
                 }
             }
             "annotation" => continue,

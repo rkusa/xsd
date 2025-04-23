@@ -140,9 +140,8 @@ impl<'a, 'input> Node<'a, 'input> {
     }
 
     pub fn attribute<'b>(&'b self, name: &str) -> Option<&'b Attribute<'a, 'input>> {
-        self.attributes.get(name).map(|attr| {
+        self.attributes.get(name).inspect(|attr| {
             attr.visited.replace(true);
-            attr
         })
     }
 
@@ -220,7 +219,7 @@ impl<'a, 'input> Node<'a, 'input> {
     }
 }
 
-impl<'a, 'input> Attribute<'a, 'input> {
+impl<'input> Attribute<'_, 'input> {
     pub fn value(&self) -> Cow<'input, str> {
         // TODO: this currently always returns a &str, but is internally a Cow, find a way to
         // retrieve the Cow instead of the &str to avoid unnecessary allocations
@@ -343,7 +342,7 @@ pub struct Children<'a, 'input, 'b> {
     children: Vec<Node<'a, 'input>>,
 }
 
-impl<'a, 'input, 'b> Children<'a, 'input, 'b> {
+impl<'a, 'input> Children<'a, 'input, '_> {
     pub fn remove(&mut self, name: &str, namespace: Option<&str>) -> Option<Node<'a, 'input>> {
         self.children
             .iter()
