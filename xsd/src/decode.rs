@@ -181,26 +181,18 @@ impl<'a> Node<'a> {
             })
     }
 
-    /// The element's text content. Comments and processing instructions are ignored, but child
-    /// elements are not allowed.
+    /// The element's text content. Comments, processing instructions and child elements (e.g.
+    /// inside of `xs:anyType` elements) are ignored.
     pub fn text(&self) -> Result<&str, FromXmlError> {
         let mut text: Option<&'a str> = None;
         let mut is_split = false;
         for child in self.node.children() {
-            match child.node_type() {
-                roxmltree::NodeType::Text => {
-                    if text.is_some() {
-                        is_split = true;
-                    } else {
-                        text = child.text();
-                    }
+            if child.is_text() {
+                if text.is_some() {
+                    is_split = true;
+                } else {
+                    text = child.text();
                 }
-                roxmltree::NodeType::Element => {
-                    return Err(FromXmlError::TextExpected {
-                        name: self.node.tag_name().name().to_string(),
-                    })
-                }
-                _ => {}
             }
         }
 

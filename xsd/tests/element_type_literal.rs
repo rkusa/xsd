@@ -25,8 +25,8 @@ fn element_type_literal_with_comments() {
 fn element_type_literal_with_child_element() {
     let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
 <Name>Foo<b>bar</b></Name>"#;
-    assert!(matches!(
-        schema::Name::from_xml(xml),
-        Err(xsd::decode::FromXmlError::TextExpected { .. })
-    ));
+    assert_eq!(
+        schema::Name::from_xml(xml).unwrap(),
+        schema::Name("Foo".to_string())
+    );
 }
