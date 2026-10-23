@@ -207,7 +207,7 @@ impl Root {
                 // TODO: use escape_enum_names?
                 let variants = variants.iter().map(|variant| {
                     let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let name_xml = &variant.name.name;
+                    let name_xml = ctx.get_xml_element_name(&variant.name);
                     let inner = variant.definition.to_xml_impl(ctx);
                     let is_literal = matches!(variant.definition.content, LeafContent::Literal(_));
                     let mut inner = if is_literal {
