@@ -16,7 +16,7 @@ pub enum NodeError {
         namespace: Option<String>,
         range: Range<usize>,
     },
-    #[error("Cannot find element for filter: {element_name:?}, {element_namespace:?}, {attribute_name:?}, {attribute_name:?}")]
+    #[error("Cannot find element for filter: {element_name:?}, {element_namespace:?}, {attribute_name:?}, {attribute_value:?}")]
     ElementNotFound {
         element_name: Option<String>,
         element_namespace: Option<String>,
@@ -157,7 +157,7 @@ impl<'a, 'input> Node<'a, 'input> {
     pub fn text(&self) -> Option<Cow<'input, str>> {
         self.inner
             .first_child()
-            .and_then(|child| if child.is_text() { Some(child) } else { None })
+            .filter(|child| child.is_text())
             .and_then(|child| child.text())
             // TODO: this currently always returns a &str, but is internally a Cow, find a way to
             // retrieve the Cow instead of the &str to avoid unnecessary allocations

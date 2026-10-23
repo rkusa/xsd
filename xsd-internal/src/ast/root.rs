@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 use crate::xsd::context::SchemaContext;
 
@@ -84,7 +84,7 @@ impl Root {
             }
             Root::Enum(names) => {
                 let names = escape_enum_names(names.clone());
-                let variants = names.keys().map(|k| format_ident!("{}", k));
+                let variants = names.iter().map(|(k, _)| format_ident!("{}", k));
                 let from_str_variants = names.iter().map(|(variant, name)| {
                     let name_xml = &name.name;
                     let variant = format_ident!("{}", variant);
@@ -418,9 +418,12 @@ impl Root {
     }
 }
 
-fn escape_enum_names(names: Vec<Name>) -> HashMap<String, Name> {
+/// Derives valid and unique Rust identifiers for the given enum variants (preserving the order
+/// in which they are defined in the schema).
+fn escape_enum_names(names: Vec<Name>) -> Vec<(String, Name)> {
     let mut unknown_count = 0;
-    let mut enum_names = HashMap::with_capacity(names.len());
+    let mut used = HashSet::with_capacity(names.len());
+    let mut enum_names = Vec::with_capacity(names.len());
 
     for name in names.into_iter() {
         let mut variant_name = name
@@ -449,7 +452,7 @@ fn escape_enum_names(names: Vec<Name>) -> HashMap<String, Name> {
         }
 
         loop {
-            if variant_name.is_empty() || enum_names.contains_key(&variant_name) {
+            if variant_name.is_empty() || used.contains(&variant_name) {
                 unknown_count += 1;
                 variant_name = format!("Variant{}", unknown_count);
             } else {
@@ -457,7 +460,8 @@ fn escape_enum_names(names: Vec<Name>) -> HashMap<String, Name> {
             }
         }
 
-        enum_names.insert(variant_name, name);
+        used.insert(variant_name.clone());
+        enum_names.push((variant_name, name));
     }
 
     enum_names

@@ -218,6 +218,14 @@ impl Leaf {
                 }
 
                 from_vec
+            } else if self.is_optional() && self.is_unordered {
+                quote! {
+                    if let Some(node) = node.child(#name_xml, #namespace_xml) {
+                        Some(#value)
+                    } else {
+                        None
+                    }
+                }
             } else if self.is_optional() {
                 quote! {
                     if let Some(node) = node.next_child(#name_xml, #namespace_xml) {

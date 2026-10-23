@@ -131,15 +131,19 @@ impl<'input> Context<'input> {
             (Some(name), None) => name,
             _ => &type_name,
         };
-        if self.default_namespace == Some(NS_XSD) {
-            Ok(LeafContent::Literal(literal_from_str(name).ok_or_else(
+        // unprefixed QNames are resolved using the default namespace
+        match self.default_namespace {
+            Some(NS_XSD) => Ok(LeafContent::Literal(literal_from_str(name).ok_or_else(
                 || XsdError::UnsupportedType {
                     name: name.to_string(),
                     range: attr.range(),
                 },
-            )?))
-        } else {
-            Ok(LeafContent::Named(Name::new(name, Namespace::None)))
+            )?)),
+            Some(ns) => Ok(LeafContent::Named(Name::new(
+                name,
+                self.shared.namespaces.get_or_insert(ns),
+            ))),
+            None => Ok(LeafContent::Named(Name::new(name, Namespace::None))),
         }
     }
 
@@ -189,15 +193,23 @@ impl SchemaContext {
 
 fn literal_from_str(literal: &str) -> Option<LiteralType> {
     Some(match literal {
-        "string" | "token" => LiteralType::String,
+        "string" | "normalizedString" | "token" | "language" | "Name" | "NCName" | "NMTOKEN"
+        | "ID" | "IDREF" | "anyURI" => LiteralType::String,
         "boolean" => LiteralType::Boolean,
-        "integer" | "long" => LiteralType::Int64,
-        "nonNegativeInteger" => LiteralType::Uint64,
+        // TODO: add validation for negative/non-positive?
+        "integer" | "long" | "negativeInteger" | "nonPositiveInteger" => LiteralType::Int64,
+        "nonNegativeInteger" | "unsignedLong" => LiteralType::Uint64,
         // TODO: add validation for non zero?
         "positiveInteger" => LiteralType::Uint64,
         "int" => LiteralType::Int32,
+        "unsignedInt" => LiteralType::Uint32,
+        "short" => LiteralType::Int16,
+        "unsignedShort" => LiteralType::Uint16,
+        "byte" => LiteralType::Int8,
+        "unsignedByte" => LiteralType::Uint8,
         "decimal" => LiteralType::Decimal,
         "float" => LiteralType::Float32,
+        "double" => LiteralType::Float64,
         "time" => LiteralType::Time,
         "date" => LiteralType::Date,
         "dateTime" => LiteralType::DateTime,

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<values self="42">
+  <break>true</break>
+  <type>false</type>
+  <double>1.5</double>
+  <short>-3</short>
+  <unsignedByte>255</unsignedByte>
+  <unsignedInt>4000000000</unsignedInt>
+  <uri>https://example.com</uri>
+</values>

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="values">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="break" type="xs:boolean" />
+        <xs:element name="type" type="xs:boolean" />
+        <xs:element name="double" type="xs:double" />
+        <xs:element name="short" type="xs:short" />
+        <xs:element name="unsignedByte" type="xs:unsignedByte" />
+        <xs:element name="unsignedInt" type="xs:unsignedInt" />
+        <xs:element name="uri" type="xs:anyURI" />
+      </xs:sequence>
+      <xs:attribute name="self" type="xs:int" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
