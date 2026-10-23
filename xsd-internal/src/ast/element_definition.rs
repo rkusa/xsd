@@ -1,4 +1,4 @@
-use crate::ast::{LeafContent, LeafDefinition};
+use crate::ast::{LeafContent, LeafDefinition, Root};
 use crate::xsd::context::SchemaContext;
 
 use super::{Attribute, ElementContent};
@@ -40,16 +40,17 @@ impl ElementDefinition {
         }
 
         // let the base element (<xs:extension base="" />) do the wrapping so that the base type
-        // is still able to add attributes to the XML element
+        // is still able to add attributes to the XML element; except for simple types, which are
+        // inlined as text (see `LeafContent::to_xml_impl`) and thus don't wrap themselves
         let is_named_leaf = matches!(
-            self.content,
+            &self.content,
             Some(ElementContent::Leaf(
                 _,
                 LeafDefinition {
-                    content: LeafContent::Named(_),
+                    content: LeafContent::Named(name),
                     ..
                 },
-            ))
+            )) if !matches!(ctx.elements.get(name), Some(Root::Leaf(_)))
         );
         let wrap = !self.is_virtual && !is_named_leaf;
         if wrap {
