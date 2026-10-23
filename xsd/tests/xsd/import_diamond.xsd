@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="urn:main" xmlns:base="urn:base" xmlns:middle="urn:middle">
+  <xs:import namespace="urn:base" schemaLocation="./import_diamond_base.xsd"/>
+  <xs:import namespace="urn:middle" schemaLocation="./import_diamond_middle.xsd"/>
+  <xs:element name="article">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="content" type="base:ArticleContent" />
+        <xs:element name="meta" type="middle:Meta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

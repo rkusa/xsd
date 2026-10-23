@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="urn:main" xmlns:ns2="urn:base" xmlns:ns3="urn:middle">
+  <content>
+    <ns2:excerpt>Lorem Ipsum</ns2:excerpt>
+    <ns2:author>
+      <ns2:name>Foobar</ns2:name>
+    </ns2:author>
+  </content>
+  <meta>
+    <ns3:related>
+      <ns2:excerpt>Dolor</ns2:excerpt>
+      <ns2:author>
+        <ns2:name>Bazqux</ns2:name>
+      </ns2:author>
+    </ns3:related>
+  </meta>
+</article>

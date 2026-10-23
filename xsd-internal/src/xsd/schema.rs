@@ -4,7 +4,7 @@ use std::io;
 use std::ops::Range;
 use std::{collections::HashMap, path::Path};
 
-use super::context::{AnonymousType, Context, SchemaContext, SharedContext, NS_XSD};
+use super::context::{AnonymousType, Context, LoadedSchema, SchemaContext, SharedContext, NS_XSD};
 use super::error::XsdError;
 use super::node::Node;
 use crate::ast::{Name, Namespace, Root};
@@ -17,6 +17,7 @@ pub struct Schema {
     pub(crate) dependencies: HashMap<Name, HashSet<Name>>,
     pub(crate) context: SchemaContext,
     pub(crate) anonymous_types: Vec<(Name, AnonymousType)>,
+    pub(crate) loaded_schemas: HashSet<LoadedSchema>,
 }
 
 impl Schema {
@@ -111,12 +112,22 @@ impl Schema {
         );
 
         for child in root.children().namespace(NS_XSD).iter() {
-            // TODO: prevent circular includes
             if child.name() == "include" || child.name() == "import" {
                 // TODO: make sure that it is a relative path
                 let location: &str = &child.try_attribute("schemaLocation")?.value();
                 let mut path = base_path.to_path_buf();
                 path.push(location);
+
+                // Schemas are often imported by multiple other schemas, but must only be parsed
+                // once. Their types have already been added to the context the first time.
+                let loaded = LoadedSchema {
+                    path: path.canonicalize().unwrap_or_else(|_| path.clone()),
+                    include_namespace: (child.name() == "include")
+                        .then(|| target_namespace.as_ref().map(|ns| ns.to_string())),
+                };
+                if !ctx.shared_mut().loaded_schemas.insert(loaded) {
+                    continue;
+                }
 
                 // merge imports
                 let mut schema = Schema::parse_file_with_context(path, Some(ctx.take_shared()))?;
@@ -142,6 +153,7 @@ impl Schema {
             namespaces: self.context.namespaces,
             dependencies: self.dependencies,
             anonymous_types: self.anonymous_types,
+            loaded_schemas: self.loaded_schemas,
         }
     }
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="urn:middle" xmlns:base="urn:base">
+  <xs:import namespace="urn:base" schemaLocation="./import_diamond_base.xsd"/>
+  <xs:complexType name="Meta">
+    <xs:sequence>
+      <xs:element name="related" type="base:ArticleContent" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

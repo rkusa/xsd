@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 
 use super::error::XsdError;
 use super::node::Attribute;
@@ -29,6 +30,18 @@ pub struct SharedContext {
     /// Anonymous types (in the order they were discovered). Their final names are only
     /// determined once the whole schema is known (see [resolve_type_names]).
     pub anonymous_types: Vec<(Name, AnonymousType)>,
+    /// The schema files that have already been parsed (see [LoadedSchema]).
+    pub loaded_schemas: HashSet<LoadedSchema>,
+}
+
+/// A schema file that has been included or imported. Only parsing it once prevents duplicates of
+/// its anonymous types (which would then need to be numbered) and endless circular imports.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LoadedSchema {
+    pub path: PathBuf,
+    /// The namespace of the including schema for `<xs:include>`, as an included schema without a
+    /// target namespace takes on the one of the schema including it ("chameleon include").
+    pub include_namespace: Option<Option<String>>,
 }
 
 /// A type without a name in the schema (e.g. an inline `<xs:complexType>` of an element, or a
@@ -91,6 +104,10 @@ impl<'input> Context<'input> {
         self.shared = shared
     }
 
+    pub fn shared_mut(&mut self) -> &mut SharedContext {
+        &mut self.shared
+    }
+
     pub fn add_root(&mut self, name: Name, root: Root) {
         self.roots.insert(name, root);
     }
@@ -107,6 +124,7 @@ impl<'input> Context<'input> {
             },
             dependencies: self.shared.dependencies,
             anonymous_types: self.shared.anonymous_types,
+            loaded_schemas: self.shared.loaded_schemas,
         }
     }
 
