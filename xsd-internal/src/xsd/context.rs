@@ -189,7 +189,7 @@ impl SchemaContext {
 
 fn literal_from_str(literal: &str) -> Option<LiteralType> {
     Some(match literal {
-        "string" => LiteralType::String,
+        "string" | "token" => LiteralType::String,
         "boolean" => LiteralType::Boolean,
         "integer" | "long" => LiteralType::Int64,
         "nonNegativeInteger" => LiteralType::Uint64,
