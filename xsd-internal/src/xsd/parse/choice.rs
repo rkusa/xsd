@@ -51,6 +51,7 @@ where
                     definition: LeafDefinition {
                         content: LeafContent::Named(root_name),
                         restrictions: Vec::new(),
+                        default: None,
                         docs,
                     },
                     is_unordered: false,

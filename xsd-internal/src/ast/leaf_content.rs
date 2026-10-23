@@ -44,19 +44,44 @@ impl LeafContent {
         }
     }
 
-    pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
+    /// The `default` is used in place of the text content if the element is empty.
+    pub fn from_xml_impl(&self, ctx: &SchemaContext, default: Option<&str>) -> TokenStream {
+        let text = match default {
+            Some(default) => quote! {
+                let val = match node.text()? {
+                    "" => #default,
+                    val => val,
+                };
+            },
+            None => quote! {
+                let val = node.text()?;
+            },
+        };
         match self {
             LeafContent::Literal(literal) => {
                 let inner = literal.from_str_impl();
                 quote! {
                     {
-                        let val = node.text()?;
+                        #text
                         #inner
                     }
                 }
             }
             LeafContent::Named(name) => match ctx.elements.get(name) {
-                Some(Root::Leaf(def)) => def.from_xml_impl(ctx),
+                Some(Root::Leaf(def)) => def
+                    .content
+                    .from_xml_impl(ctx, default.or(def.default.as_deref())),
+                // enums are parsed from the text content, so the default can be applied as well
+                Some(Root::Enum(_)) if default.is_some() => {
+                    let inner = name.from_str_impl();
+                    quote! {
+                        {
+                            #text
+                            #inner
+                        }
+                    }
+                }
+                // defaults of complex types aren't supported (yet)
                 _ => name.from_xml_impl(),
             },
             LeafContent::Fixed(fixed) => {

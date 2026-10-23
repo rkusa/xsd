@@ -45,6 +45,7 @@ where
             LeafDefinition {
                 content,
                 restrictions: Vec::new(),
+                default: None,
                 docs: None,
             },
         )),

@@ -15,10 +15,16 @@ pub struct Attribute {
 }
 
 impl Attribute {
+    /// Whether the attribute is represented as an `Option`. Optional attributes with a default
+    /// are not, as the default is used in place of a missing attribute.
+    fn is_option(&self) -> bool {
+        self.is_optional && self.default.is_none()
+    }
+
     pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
         let name_ident = escape_ident(&self.name.name.to_snake_case());
         let mut type_ident = self.content.to_impl(ctx);
-        if self.is_optional {
+        if self.is_option() {
             type_ident = quote! { Option<#type_ident> };
         }
         let docs = self
@@ -41,7 +47,7 @@ impl Attribute {
             LeafContent::Named(_) => quote! { val.to_string() },
             LeafContent::Fixed(fixed) => quote! { #fixed },
         };
-        if self.is_optional {
+        if self.is_option() {
             quote! {
                 let val = self.#name_ident.as_ref().map(|val| {
                     #inner
@@ -64,7 +70,14 @@ impl Attribute {
         let name_xml = &self.name.name;
         let inner = self.content.from_str_impl();
 
-        if self.is_optional {
+        if let Some(default) = &self.default {
+            quote! {
+                #name_ident: {
+                    let val = node.attribute(#name_xml).unwrap_or(#default);
+                    #inner
+                },
+            }
+        } else if self.is_optional {
             quote! {
                 #name_ident: {
                     if let Some(val) = node.attribute(#name_xml) {

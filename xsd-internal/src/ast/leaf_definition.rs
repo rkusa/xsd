@@ -9,6 +9,8 @@ pub struct LeafDefinition {
     pub content: LeafContent,
     // pub docs: Option<String>,
     pub restrictions: Vec<Restriction>,
+    /// The value to use if the element is present but empty.
+    pub default: Option<String>,
     pub docs: Option<String>,
 }
 
@@ -34,6 +36,6 @@ impl LeafDefinition {
     }
 
     pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
-        self.content.from_xml_impl(ctx)
+        self.content.from_xml_impl(ctx, self.default.as_deref())
     }
 }

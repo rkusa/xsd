@@ -65,6 +65,7 @@ where
             definition: LeafDefinition {
                 content: LeafContent::Named(root_name),
                 restrictions: Vec::new(),
+                default: None,
                 docs: None,
             },
             is_unordered: false,
@@ -93,6 +94,7 @@ where
                 LeafDefinition {
                     content,
                     restrictions: Vec::new(),
+                    default: None,
                     docs: None,
                 },
             )
@@ -102,6 +104,7 @@ where
                 definition: LeafDefinition {
                     content,
                     restrictions: Vec::new(),
+                    default: None,
                     docs: None,
                 },
                 is_unordered: false,

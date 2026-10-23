@@ -1,9 +1,17 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="Level">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="info" />
+      <xs:enumeration value="warn" />
+    </xs:restriction>
+  </xs:simpleType>
   <xs:element name="settings">
     <xs:complexType>
       <xs:sequence>
         <xs:element name="debug" type="xs:boolean" minOccurs="0" default="false" />
+        <xs:element name="level" type="Level" minOccurs="0" default="warn" />
+        <xs:element name="name" type="xs:string" minOccurs="0" default="unnamed" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>

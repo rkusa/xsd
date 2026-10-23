@@ -30,6 +30,7 @@ where
             }
             _ => {}
         }
+        let default = node.attribute("default").map(|a| a.value().into_owned());
 
         node.prevent_unvisited_attributes()?;
         children.prevent_unvisited_children()?;
@@ -37,6 +38,7 @@ where
         Ok(Root::Leaf(LeafDefinition {
             content,
             restrictions: Vec::new(),
+            default,
             docs,
         }))
     } else {
@@ -82,6 +84,7 @@ where
                 definition: LeafDefinition {
                     content: LeafContent::Named(name),
                     restrictions: Vec::new(),
+                    default: None,
                     docs: None,
                 },
                 is_unordered: false,
@@ -101,8 +104,7 @@ where
 
     let name = ctx.get_node_name(&node.try_attribute("name")?.value(), false);
 
-    // mark `default` attribute as visited
-    node.attribute("default");
+    let default = node.attribute("default").map(|a| a.value().into_owned());
 
     // TODO: implement attribute?
     node.attribute("form");
@@ -129,6 +131,7 @@ where
             definition: LeafDefinition {
                 content,
                 restrictions: Vec::new(),
+                default,
                 docs,
             },
             is_unordered: false,
@@ -147,6 +150,7 @@ where
             definition: LeafDefinition {
                 content: LeafContent::Literal(LiteralType::Any),
                 restrictions: Vec::new(),
+                default,
                 docs,
             },
             is_unordered: false,
@@ -173,6 +177,7 @@ where
             definition: LeafDefinition {
                 content: LeafContent::Named(virtual_name),
                 restrictions: Vec::new(),
+                default,
                 docs,
             },
             is_unordered: false,

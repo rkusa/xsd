@@ -122,6 +122,7 @@ where
         Root::Leaf(LeafDefinition {
             content: LeafContent::Literal(type_),
             restrictions,
+            default: None,
             docs,
         })
     } else {
