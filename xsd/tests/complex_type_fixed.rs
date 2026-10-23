@@ -13,3 +13,33 @@ fn complex_type_fixed() {
     assert_eq!(schema::Meta::from_xml(xml).unwrap(), expected);
     assert_eq!(String::from_utf8_lossy(&expected.to_xml().unwrap()), xml);
 }
+
+#[test]
+fn complex_type_fixed_attribute_mismatch() {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<meta name="other">
+  <version>2</version>
+</meta>"#;
+    assert!(matches!(
+        schema::Meta::from_xml(xml),
+        Err(xsd::decode::FromXmlError::FixedMismatch {
+            expected: "foobar",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn complex_type_fixed_attribute_absent() {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<meta>
+  <version>2</version>
+</meta>"#;
+    assert_eq!(
+        schema::Meta::from_xml(xml).unwrap(),
+        schema::Meta {
+            version: (),
+            name: None,
+        }
+    );
+}

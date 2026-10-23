@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::collections::VecDeque;
 use std::ops::Range;
 
@@ -40,6 +40,9 @@ pub struct Document<'a>(roxmltree::Document<'a>);
 pub struct Node<'a> {
     node: roxmltree::Node<'a, 'a>,
     children: RefCell<Children<'a>>,
+    /// Text content that is split into multiple text nodes (e.g. by comments) and thus had to
+    /// be joined.
+    joined_text: OnceCell<String>,
 }
 
 struct Children<'a> {
@@ -81,6 +84,7 @@ impl<'a> Node<'a> {
                 peeked: VecDeque::new(),
                 next: None,
             }),
+            joined_text: OnceCell::new(),
             node,
         }
     }
@@ -177,14 +181,39 @@ impl<'a> Node<'a> {
             })
     }
 
+    /// The element's text content. Comments and processing instructions are ignored, but child
+    /// elements are not allowed.
     pub fn text(&self) -> Result<&str, FromXmlError> {
-        if self.node.first_child().is_none() {
-            Ok("")
-        } else {
-            self.node.text().ok_or_else(|| FromXmlError::TextExpected {
-                name: self.node.tag_name().name().to_string(),
-            })
+        let mut text: Option<&'a str> = None;
+        let mut is_split = false;
+        for child in self.node.children() {
+            match child.node_type() {
+                roxmltree::NodeType::Text => {
+                    if text.is_some() {
+                        is_split = true;
+                    } else {
+                        text = child.text();
+                    }
+                }
+                roxmltree::NodeType::Element => {
+                    return Err(FromXmlError::TextExpected {
+                        name: self.node.tag_name().name().to_string(),
+                    })
+                }
+                _ => {}
+            }
         }
+
+        if !is_split {
+            return Ok(text.unwrap_or(""));
+        }
+
+        Ok(self.joined_text.get_or_init(|| {
+            self.node
+                .children()
+                .filter_map(|child| if child.is_text() { child.text() } else { None })
+                .collect()
+        }))
     }
 
     pub fn range(&self) -> Range<usize> {

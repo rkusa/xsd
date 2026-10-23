@@ -79,7 +79,14 @@ impl LeafContent {
         match self {
             LeafContent::Literal(literal) => literal.from_str_impl(),
             LeafContent::Named(name) => name.from_str_impl(),
-            LeafContent::Fixed(_) => quote! { () },
+            LeafContent::Fixed(fixed) => quote! {
+                if val != #fixed {
+                    return Err(::xsd::decode::FromXmlError::FixedMismatch {
+                        expected: #fixed,
+                        received: val.to_string(),
+                    }.into());
+                }
+            },
         }
     }
 }
