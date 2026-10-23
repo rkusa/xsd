@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+  <customer>
+    <address>
+      <street>Main St</street>
+    </address>
+  </customer>
+  <shipping>
+    <address>
+      <city>Springfield</city>
+    </address>
+  </shipping>
+  <status>
+    <text>open</text>
+  </status>
+  <invoice>INV-1</invoice>
+  <carrier>DHL</carrier>
+  <tracking>123</tracking>
+</order>

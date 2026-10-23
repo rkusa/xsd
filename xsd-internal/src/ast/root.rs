@@ -142,17 +142,19 @@ impl Root {
                 }
             }
             Root::Choice(ChoiceDefinition { variants, .. }) => {
-                // TODO: use escape_enum_names?
-                let variants = variants.iter().map(|variant| {
-                    let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let mut type_ident = variant.definition.to_impl(ctx);
-                    if variant.is_vec() {
-                        type_ident = quote! { Vec<#type_ident> }
-                    }
-                    quote! {
-                        #variant_name(#type_ident)
-                    }
-                });
+                let variant_names = choice_variant_idents(variants);
+                let variants = variants
+                    .iter()
+                    .zip(variant_names)
+                    .map(|(variant, variant_name)| {
+                        let mut type_ident = variant.definition.to_impl(ctx);
+                        if variant.is_vec() {
+                            type_ident = quote! { Vec<#type_ident> }
+                        }
+                        quote! {
+                            #variant_name(#type_ident)
+                        }
+                    });
 
                 quote! {
                     {
@@ -204,39 +206,42 @@ impl Root {
                 is_virtual,
                 ..
             }) => {
-                // TODO: use escape_enum_names?
-                let variants = variants.iter().map(|variant| {
-                    let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
-                    let name_xml = ctx.get_xml_element_name(&variant.name);
-                    let inner = variant.definition.to_xml_impl(ctx);
-                    let is_literal = matches!(variant.definition.content, LeafContent::Literal(_));
-                    let mut inner = if is_literal {
-                        quote! {
-                            let mut ctx = ::xsd::Context::new(#name_xml);
-                            ctx.write_start_element(writer)?;
-                            #inner
-                            ctx.write_end_element(writer)?;
-                        }
-                    } else {
-                        quote! {
-                            let mut ctx = ::xsd::Context::new(#name_xml);
-                            #inner
-                        }
-                    };
-                    if variant.is_vec() {
-                        inner = quote! {
-                            for val in val {
+                let variant_names = choice_variant_idents(variants);
+                let variants = variants
+                    .iter()
+                    .zip(variant_names)
+                    .map(|(variant, variant_name)| {
+                        let name_xml = ctx.get_xml_element_name(&variant.name);
+                        let inner = variant.definition.to_xml_impl(ctx);
+                        let is_literal =
+                            matches!(variant.definition.content, LeafContent::Literal(_));
+                        let mut inner = if is_literal {
+                            quote! {
+                                let mut ctx = ::xsd::Context::new(#name_xml);
+                                ctx.write_start_element(writer)?;
+                                #inner
+                                ctx.write_end_element(writer)?;
+                            }
+                        } else {
+                            quote! {
+                                let mut ctx = ::xsd::Context::new(#name_xml);
                                 #inner
                             }
                         };
-                    }
-
-                    quote! {
-                        Self::#variant_name(val) => {
-                            #inner
+                        if variant.is_vec() {
+                            inner = quote! {
+                                for val in val {
+                                    #inner
+                                }
+                            };
                         }
-                    }
-                });
+
+                        quote! {
+                            Self::#variant_name(val) => {
+                                #inner
+                            }
+                        }
+                    });
 
                 let tn = quote! {
                     match self {
@@ -280,15 +285,14 @@ impl Root {
                 }
             }
             Root::Choice(ChoiceDefinition { variants, .. }) => {
-                // TODO: use escape_enum_names?
-                let variants = variants.iter().map(|variant| {
-                    let variant_name = format_ident!("{}", variant.name.name.to_pascal_case());
+                let variant_names = choice_variant_idents(variants);
+                let variants = variants.iter().zip(variant_names).map(|(variant, variant_name)| {
                     let inner = variant.definition.from_xml_impl(ctx);
                     let name_xml = &variant.name.name;
                     let namespace_xml = ctx.quote_xml_namespace(&variant.name);
                     if variant.is_virtual {
                         if let LeafContent::Named(name) = &variant.definition.content {
-                            let first_name = format_ident!("{}", name.name.to_pascal_case());
+                            let first_name = ctx.type_ident(name);
                             quote! {
                                 if #first_name::lookahead(node) {
                                     Self::#variant_name(#inner)
@@ -365,7 +369,7 @@ impl Root {
                                 // TODO: reflect that in the type?
                                 unreachable!()
                             };
-                            let name = format_ident!("{}", name.name.to_pascal_case());
+                            let name = ctx.type_ident(name);
                             Some(quote! {
                                 #name::lookahead(node)
                             })
@@ -397,7 +401,7 @@ impl Root {
                             // TODO: reflect that in the type?
                             unreachable!()
                         };
-                        let name = format_ident!("{}", name.name.to_pascal_case());
+                        let name = ctx.type_ident(name);
                         quote! {
                             #name::lookahead(node)
                         }
@@ -421,13 +425,27 @@ impl Root {
 /// Derives valid and unique Rust identifiers for the given enum variants (preserving the order
 /// in which they are defined in the schema).
 fn escape_enum_names(names: Vec<Name>) -> Vec<(String, Name)> {
-    let mut unknown_count = 0;
-    let mut used = HashSet::with_capacity(names.len());
-    let mut enum_names = Vec::with_capacity(names.len());
+    let variants = escape_variant_names(names.iter().map(|name| name.name.as_str()));
+    variants.into_iter().zip(names).collect()
+}
 
-    for name in names.into_iter() {
+/// Derives valid and unique Rust identifiers for the variants of the given choice.
+fn choice_variant_idents(variants: &[Leaf]) -> Vec<Ident> {
+    escape_variant_names(variants.iter().map(|variant| variant.name.name.as_str()))
+        .into_iter()
+        .map(|name| format_ident!("{}", name))
+        .collect()
+}
+
+/// Derives valid and unique Rust identifiers for the given variant names (preserving their
+/// order).
+fn escape_variant_names<'a>(names: impl IntoIterator<Item = &'a str>) -> Vec<String> {
+    let mut unknown_count = 0;
+    let mut used = HashSet::new();
+    let mut variants = Vec::new();
+
+    for name in names {
         let mut variant_name = name
-            .name
             .chars()
             .filter_map(|c| match c {
                 '_' | '-' => Some('_'),
@@ -450,19 +468,43 @@ fn escape_enum_names(names: Vec<Name>) -> Vec<(String, Name)> {
         {
             variant_name = format!("V{}", variant_name);
         }
+        // the only keyword that is in pascal case
+        if variant_name == "Self" {
+            variant_name = "Self_".to_string();
+        }
 
-        loop {
-            if variant_name.is_empty() || used.contains(&variant_name) {
+        if variant_name.is_empty() {
+            loop {
                 unknown_count += 1;
                 variant_name = format!("Variant{}", unknown_count);
-            } else {
-                break;
+                if !used.contains(&variant_name) {
+                    break;
+                }
             }
+        } else if used.contains(&variant_name) {
+            let mut n = 2;
+            while used.contains(&format!("{variant_name}{n}")) {
+                n += 1;
+            }
+            variant_name = format!("{variant_name}{n}");
         }
 
         used.insert(variant_name.clone());
-        enum_names.push((variant_name, name));
+        variants.push(variant_name);
     }
 
-    enum_names
+    variants
+}
+
+#[cfg(test)]
+mod tests {
+    use super::escape_variant_names;
+
+    #[test]
+    fn escape_variants() {
+        assert_eq!(
+            escape_variant_names(["foo-bar", "1st", "self", "", "fooBar", "a.b"]),
+            vec!["FooBar", "V1St", "Self_", "Variant1", "FooBar2", "Ab"]
+        );
+    }
 }

@@ -8,7 +8,7 @@ fn choice_optional() {
     let xml = include_str!("./xsd/choice_optional.xml");
     let expected = schema::Article {
         body: "Lorem Ipsum".to_string(),
-        user_bot: Some(schema::ArticleUserBot::Bot(schema::Bot {
+        user_or_bot: Some(schema::ArticleUserOrBot::Bot(schema::Bot {
             handle: "foobot".to_string(),
         })),
     };

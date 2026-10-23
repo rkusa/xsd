@@ -23,7 +23,7 @@ where
         ctx.discover_type(name, Some(parent));
         name.clone()
     } else {
-        parent.clone()
+        ctx.segment_name(parent)
     };
 
     let mut children = extension.children().namespace(NS_XSD).collect();

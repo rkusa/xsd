@@ -7,16 +7,16 @@ use pretty_assertions::assert_eq;
 fn sequence_vec() {
     let xml = include_str!("./xsd/sequence_vec.xml");
     let expected = schema::Settings {
-        key_value: vec![
-            schema::SettingsKeyValue {
+        key_and_value: vec![
+            schema::SettingsKeyAndValue {
                 key: "alpha".to_string(),
                 value: 1,
             },
-            schema::SettingsKeyValue {
+            schema::SettingsKeyAndValue {
                 key: "bravo".to_string(),
                 value: 2,
             },
-            schema::SettingsKeyValue {
+            schema::SettingsKeyAndValue {
                 key: "charlie".to_string(),
                 value: 3,
             },

@@ -59,8 +59,13 @@ where
         }
 
         if max_occurs.is_vec() || min_occurs != Default::default() {
-            let leaf_name = super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
-            let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
+            let leaf_name = super::group_name(
+                &leaves.iter().map(|v| &v.name).collect::<Vec<_>>(),
+                "And",
+                "sequence",
+            );
+            let root_name = ctx.anonymous_group(parent, &leaf_name);
+            let leaf_name = ctx.get_node_name(&leaf_name, false);
 
             ctx.add_root(
                 root_name.clone(),
@@ -91,8 +96,13 @@ where
         }
     } else if let Some(child) = children.remove("choice", Some(NS_XSD)) {
         let variants = super::choice::parse(child, parent, ctx)?;
-        let root_name =
-            super::derive_virtual_name(vec![parent, &ctx.get_node_name("Data", false)], ctx, false);
+        let leaf_name = super::group_name(
+            &variants.iter().map(|v| &v.name).collect::<Vec<_>>(),
+            "Or",
+            "choice",
+        );
+        let root_name = ctx.anonymous_group(parent, &leaf_name);
+        let leaf_name = ctx.get_node_name(&leaf_name, false);
 
         ctx.add_root(
             root_name.clone(),
@@ -105,7 +115,7 @@ where
         ctx.discover_type(&root_name, Some(parent));
 
         Some(ElementContent::Leaf(
-            root_name.clone(),
+            leaf_name,
             LeafDefinition {
                 content: LeafContent::Named(root_name),
                 restrictions: Vec::new(),

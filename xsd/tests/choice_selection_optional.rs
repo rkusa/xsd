@@ -10,8 +10,8 @@ fn choice_selection_optional() {
         diameter: 12.4,
         thickness: schema::GeometryTypeThickness::Thickness(schema::GeometryTypeThicknessVariant {
             thickness: None,
-            thickness_reduction: Some(schema::GeometryTypeThicknessReductionData {
-                geometry_type_thickness_reduction_data: true,
+            thickness_reduction: Some(schema::ThicknessReduction {
+                thickness_reduction: true,
                 reference: "shape".to_string(),
             }),
         }),

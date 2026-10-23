@@ -8,7 +8,7 @@ fn sequence_sequence() {
     let xml = include_str!("./xsd/sequence_sequence.xml");
     let expected = schema::Settings {
         scope: "all".to_string(),
-        key_value: schema::SettingsKeyValue {
+        key_and_value: schema::SettingsKeyAndValue {
             key: "alpha".to_string(),
             value: 1,
         },

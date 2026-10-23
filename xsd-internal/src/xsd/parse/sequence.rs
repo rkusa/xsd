@@ -28,9 +28,16 @@ where
                 let max_occurs = parse_max_occurs(child.attribute("maxOccurs"))?;
 
                 let variants = super::choice::parse(child, parent, ctx)?;
-                let leaf_name =
-                    super::derive_virtual_name(variants.iter().map(|v| &v.name), ctx, true);
-                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
+                let leaf_name = super::unique_leaf_name(
+                    super::group_name(
+                        &variants.iter().map(|v| &v.name).collect::<Vec<_>>(),
+                        "Or",
+                        "choice",
+                    ),
+                    &leaves,
+                );
+                let root_name = ctx.anonymous_group(parent, &leaf_name);
+                let leaf_name = ctx.get_node_name(&leaf_name, false);
 
                 ctx.add_root(
                     root_name.clone(),
@@ -61,16 +68,23 @@ where
 
                 let min_occurs = parse_min_occurs(child.attribute("minOccurs"))?;
 
-                let leaves = parse(child, parent, ctx)?;
-                let leaf_name =
-                    super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
-                let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
+                let inner = parse(child, parent, ctx)?;
+                let leaf_name = super::unique_leaf_name(
+                    super::group_name(
+                        &inner.iter().map(|v| &v.name).collect::<Vec<_>>(),
+                        "And",
+                        "sequence",
+                    ),
+                    &leaves,
+                );
+                let root_name = ctx.anonymous_group(parent, &leaf_name);
+                let leaf_name = ctx.get_node_name(&leaf_name, false);
 
                 ctx.add_root(
                     root_name.clone(),
                     Root::Element(ElementDefinition {
                         attributes: Vec::new(),
-                        content: Some(ElementContent::Leaves(leaves)),
+                        content: Some(ElementContent::Leaves(inner)),
                         is_virtual: true,
                         docs: None,
                     }),

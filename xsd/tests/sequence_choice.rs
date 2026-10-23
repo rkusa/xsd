@@ -8,7 +8,7 @@ fn sequence_choice() {
     let xml = include_str!("./xsd/sequence_choice.xml");
     let expected = schema::Article {
         body: "Lorem Ipsum".to_string(),
-        user_bot: schema::ArticleUserBot::Bot(schema::Bot {
+        user_or_bot: schema::ArticleUserOrBot::Bot(schema::Bot {
             handle: "foobot".to_string(),
         }),
     };

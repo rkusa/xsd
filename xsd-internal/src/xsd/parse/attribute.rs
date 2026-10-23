@@ -27,11 +27,7 @@ where
             // for restrictions
             LeafContent::Literal(content)
         } else {
-            let virtual_name = super::derive_virtual_name(
-                vec![parent, &name, &ctx.get_node_name("Data", false)],
-                ctx,
-                false,
-            );
+            let virtual_name = ctx.anonymous_type(parent, &name.name);
             ctx.add_root(virtual_name.clone(), root);
             ctx.discover_type(&virtual_name, Some(parent));
 

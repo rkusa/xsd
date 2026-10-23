@@ -8,13 +8,13 @@ fn complex_type_choice() {
     let xml = include_str!("./xsd/complex_type_choice.xml");
     let expected = schema::Article {
         created_by: schema::Author {
-            author_data: schema::AuthorData::User(schema::User {
+            user_or_bot: schema::AuthorUserOrBot::User(schema::User {
                 name: "Foobar".to_string(),
             }),
             is_verified: true,
         },
-        posted_by: schema::ArticlePostedByData {
-            article_posted_by_data_data: schema::ArticlePostedByDataData::Bot(schema::Bot {
+        posted_by: schema::PostedBy {
+            user_or_bot: schema::PostedByUserOrBot::Bot(schema::Bot {
                 handle: "Foobot".to_string(),
             }),
             is_verified: false,

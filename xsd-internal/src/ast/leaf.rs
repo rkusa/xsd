@@ -4,7 +4,7 @@ use crate::utils::escape_ident;
 use crate::xsd::context::SchemaContext;
 use inflector::Inflector;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, TokenStreamExt};
+use quote::{quote, TokenStreamExt};
 
 #[derive(Debug, Clone)]
 pub struct Leaf {
@@ -155,7 +155,7 @@ impl Leaf {
                     unreachable!()
                 };
 
-                let first_name = format_ident!("{}", name.name.to_pascal_case());
+                let first_name = ctx.type_ident(name);
                 value = quote! {
                     {
                         let mut vec = Vec::new();
@@ -185,7 +185,7 @@ impl Leaf {
                     unreachable!()
                 };
 
-                let first_name = format_ident!("{}", name.name.to_pascal_case());
+                let first_name = ctx.type_ident(name);
                 value = quote! {
                     if #first_name::lookahead(node) {
                         Some(#value)

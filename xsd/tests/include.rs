@@ -9,7 +9,7 @@ fn include() {
     let expected = schema::Article {
         content: schema::ArticleContent {
             excerpt: "Lorem Ipsum".to_string(),
-            author: schema::ArticleContentAuthorData {
+            author: schema::Author {
                 name: "Foobar".to_string(),
             },
         },

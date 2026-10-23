@@ -9,10 +9,10 @@ fn virtual_type_collision() {
     let expected = schema::Trace(schema::Path {
         point: vec![
             schema::PathPoint {
-                point: schema::PathPointData { x: 1.0, y: 2.0 },
+                point: schema::Point { x: 1.0, y: 2.0 },
             },
             schema::PathPoint {
-                point: schema::PathPointData { x: 3.0, y: 4.0 },
+                point: schema::Point { x: 3.0, y: 4.0 },
             },
         ],
     });

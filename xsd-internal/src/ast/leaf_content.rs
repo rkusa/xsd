@@ -17,7 +17,7 @@ impl LeafContent {
             LeafContent::Literal(literal) => literal.to_impl(),
             LeafContent::Named(name) => match ctx.elements.get(name) {
                 Some(Root::Leaf(def)) => def.to_impl(ctx),
-                _ => name.to_impl(),
+                _ => name.to_impl(ctx),
             },
             LeafContent::Fixed(_) => quote!(()),
         }
@@ -82,7 +82,7 @@ impl LeafContent {
                     }
                 }
                 // defaults of complex types aren't supported (yet)
-                _ => name.from_xml_impl(),
+                _ => name.from_xml_impl(ctx),
             },
             LeafContent::Fixed(fixed) => {
                 quote! {

@@ -162,11 +162,7 @@ where
         node.prevent_unvisited_attributes()?;
 
         // create a new virtual type
-        let virtual_name = super::derive_virtual_name(
-            vec![parent, &name, &ctx.get_node_name("Data", false)],
-            ctx,
-            false,
-        );
+        let virtual_name = ctx.anonymous_type(parent, &name.name);
 
         let root = super::root::parse(node, &virtual_name, ctx)?;
         ctx.add_root(virtual_name.clone(), root);

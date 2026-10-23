@@ -28,12 +28,9 @@ where
 
                 let leaves = super::sequence::parse(child, parent, ctx)?;
                 let leaf_name =
-                    super::derive_virtual_name(leaves.iter().map(|v| &v.name), ctx, true);
-                let root_name = super::derive_virtual_name(
-                    vec![parent, &leaf_name, &ctx.get_node_name("Variant", false)],
-                    ctx,
-                    false,
-                );
+                    super::variant_name(&leaves.iter().map(|v| &v.name).collect::<Vec<_>>());
+                let root_name = ctx.anonymous_variant(parent, &leaf_name);
+                let leaf_name = ctx.get_node_name(&leaf_name, false);
 
                 ctx.add_root(
                     root_name.clone(),

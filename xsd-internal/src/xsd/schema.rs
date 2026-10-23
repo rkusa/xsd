@@ -4,12 +4,10 @@ use std::io;
 use std::ops::Range;
 use std::{collections::HashMap, path::Path};
 
-use super::context::{Context, SchemaContext, SharedContext, NS_XSD};
+use super::context::{AnonymousType, Context, SchemaContext, SharedContext, NS_XSD};
 use super::error::XsdError;
 use super::node::Node;
 use crate::ast::{Name, Namespace, Root};
-use crate::utils::escape_ident;
-use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::{quote, TokenStreamExt};
 use roxmltree::{Document, TextPos};
@@ -18,6 +16,7 @@ use roxmltree::{Document, TextPos};
 pub struct Schema {
     pub(crate) dependencies: HashMap<Name, HashSet<Name>>,
     pub(crate) context: SchemaContext,
+    pub(crate) anonymous_types: Vec<(Name, AnonymousType)>,
 }
 
 impl Schema {
@@ -142,6 +141,7 @@ impl Schema {
         SharedContext {
             namespaces: self.context.namespaces,
             dependencies: self.dependencies,
+            anonymous_types: self.anonymous_types,
         }
     }
 
@@ -213,7 +213,9 @@ impl Schema {
         let mut result = TokenStream::new();
 
         // TODO: handle duplicates with different prefixes
-        let name_ident = escape_ident(&name.name.to_pascal_case());
+        let name_ident = self.context.type_ident(name);
+        // anonymous types are never the root of a document
+        let is_root = !self.context.is_anonymous(name);
         let kind = if el.is_enum() {
             quote!(enum)
         } else {
@@ -253,9 +255,10 @@ impl Schema {
             element_ns.push(quote! { .set_ns(#prefix, #namespace) });
         }
 
-        result.append_all(quote! {
-            impl #name_ident {
-                pub fn to_xml(&self) -> Result<Vec<u8>, ::xsd::xml::writer::Error> {
+        if is_root {
+            result.append_all(quote! {
+                impl #name_ident {
+                    pub fn to_xml(&self) -> Result<Vec<u8>, ::xsd::xml::writer::Error> {
                     use ::xsd::xml::writer::events::XmlEvent;
 
                     let mut body = Vec::new();
@@ -273,7 +276,12 @@ impl Schema {
 
                     Ok(body)
                 }
+            }
+            });
+        }
 
+        result.append_all(quote! {
+            impl #name_ident {
                 fn to_xml_writer<'a, 'b, W: ::std::io::Write>(
                     &'a self,
                     mut ctx: ::xsd::Context<'a, 'b>,
@@ -293,14 +301,20 @@ impl Schema {
         let namespace_xml = self.context.quote_xml_namespace(name);
         let from_xml = el.from_xml_impl(&name_ident, &self.context);
 
+        if is_root {
+            result.append_all(quote! {
+                impl #name_ident {
+                    pub fn from_xml(input: impl AsRef<str>) -> Result<Self, ::xsd::decode::FromXmlError> {
+                        let doc = ::xsd::decode::decode(input.as_ref())?;
+                        let node = doc.try_child(#name_xml, #namespace_xml)?;
+                        Self::from_xml_node(&node)
+                    }
+                }
+            });
+        }
+
         result.append_all(quote! {
             impl #name_ident {
-                pub fn from_xml(input: impl AsRef<str>) -> Result<Self, ::xsd::decode::FromXmlError> {
-                    let doc = ::xsd::decode::decode(input.as_ref())?;
-                    let node = doc.try_child(#name_xml, #namespace_xml)?;
-                    Self::from_xml_node(&node)
-                }
-
                 fn from_xml_node(node: &::xsd::decode::Node) -> Result<Self, ::xsd::decode::FromXmlError> {
                     Ok(#from_xml)
                 }

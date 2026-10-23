@@ -8,10 +8,10 @@ fn choice_vec() {
     let xml = include_str!("./xsd/choice_vec.xml");
     let expected = schema::User {
         id: 42,
-        alias_email: Some(vec![
-            schema::UserAliasEmail::Alias("Foo".to_string()),
-            schema::UserAliasEmail::Email("foo@example.org".to_string()),
-            schema::UserAliasEmail::Email("42@example.org".to_string()),
+        alias_or_email: Some(vec![
+            schema::UserAliasOrEmail::Alias("Foo".to_string()),
+            schema::UserAliasOrEmail::Email("foo@example.org".to_string()),
+            schema::UserAliasOrEmail::Email("42@example.org".to_string()),
         ]),
     };
     assert_eq!(schema::User::from_xml(xml).unwrap(), expected);

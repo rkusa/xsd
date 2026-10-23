@@ -1,6 +1,5 @@
-use crate::utils::escape_ident;
+use crate::xsd::context::SchemaContext;
 
-use inflector::Inflector;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -25,8 +24,8 @@ impl Name {
         }
     }
 
-    pub fn to_impl(&self) -> TokenStream {
-        let name_ident = escape_ident(&self.name.to_pascal_case());
+    pub fn to_impl(&self, ctx: &SchemaContext) -> TokenStream {
+        let name_ident = ctx.type_ident(self);
         quote!(#name_ident)
     }
 
@@ -36,8 +35,8 @@ impl Name {
         }
     }
 
-    pub fn from_xml_impl(&self) -> TokenStream {
-        let name_ident = escape_ident(&self.name.to_pascal_case());
+    pub fn from_xml_impl(&self, ctx: &SchemaContext) -> TokenStream {
+        let name_ident = ctx.type_ident(self);
         quote! {
             #name_ident::from_xml_node(&node)?
         }

@@ -47,7 +47,7 @@ where
 
         let leaves = super::sequence::parse(child, parent, ctx)?;
         let leaf_name = ctx.get_node_name(&base_name.name, false);
-        let root_name = super::derive_virtual_name(vec![parent, &leaf_name], ctx, false);
+        let root_name = ctx.anonymous_group(parent, &base_name.name);
 
         ctx.add_root(
             root_name.clone(),
