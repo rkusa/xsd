@@ -58,6 +58,10 @@ pub struct AnonymousType {
     /// Appended to the name, if it still collides with another type after the type's whole path
     /// has been used.
     pub fallback_suffix: Option<&'static str>,
+    /// Decides which of the types with the same path keeps the name, while the others get their
+    /// fallback suffix (lowest wins): types (0), then groups (1), then sequences inside of
+    /// choices (2).
+    pub priority: u8,
 }
 
 /// The context reduced to the data necessary for the code-generation.
@@ -132,18 +136,25 @@ impl<'input> Context<'input> {
     /// and returns its (internal) name. The final name is resolved once the whole schema is
     /// known.
     pub fn anonymous_type(&mut self, parent: &Name, segment: &str) -> Name {
-        self.register_anonymous_type(parent, segment, false, None)
+        self.register_anonymous_type(parent, segment, false, None, 0)
     }
 
     /// Registers a new anonymous group (e.g. a `<xs:choice>` inside of a `<xs:sequence>`), whose
-    /// name always contains its parent's name (e.g. `UserChoice`).
-    pub fn anonymous_group(&mut self, parent: &Name, segment: &str) -> Name {
-        self.register_anonymous_type(parent, segment, true, None)
+    /// name always contains its parent's name (e.g. `UserChoice`). The `fallback_suffix` (e.g.
+    /// `Choice`) tells it apart from a type with the same path, like the type of the group's only
+    /// element (whose name the group is derived from).
+    pub fn anonymous_group(
+        &mut self,
+        parent: &Name,
+        segment: &str,
+        fallback_suffix: &'static str,
+    ) -> Name {
+        self.register_anonymous_type(parent, segment, true, Some(fallback_suffix), 1)
     }
 
     /// Registers a new anonymous `<xs:sequence>` inside of a `<xs:choice>`.
     pub fn anonymous_variant(&mut self, parent: &Name, segment: &str) -> Name {
-        self.register_anonymous_type(parent, segment, true, Some("Variant"))
+        self.register_anonymous_type(parent, segment, true, Some("Variant"), 2)
     }
 
     fn register_anonymous_type(
@@ -152,6 +163,7 @@ impl<'input> Context<'input> {
         segment: &str,
         include_parent: bool,
         fallback_suffix: Option<&'static str>,
+        priority: u8,
     ) -> Name {
         // `/` can't be part of an XML name, so the internal name never collides with named types
         let base = format!("{}/{}", parent.name, segment);
@@ -168,6 +180,7 @@ impl<'input> Context<'input> {
                 segment: segment.to_string(),
                 include_parent,
                 fallback_suffix,
+                priority,
             },
         ));
         name
@@ -387,6 +400,12 @@ fn resolve_type_names(
             (i, min_len.min(path.len()))
         })
         .collect();
+    let full_names = types
+        .iter()
+        .map(|(_, path, _)| candidate(path, path.len()))
+        .collect::<Vec<_>>();
+    // which type got which name
+    let mut holders = HashMap::<String, usize>::new();
     let mut exhausted = Vec::new();
     while !pending.is_empty() {
         let candidates = pending
@@ -402,9 +421,25 @@ fn resolve_type_names(
         for ((i, len), candidate) in pending.iter().zip(&candidates) {
             if counts[candidate.as_str()] == 1 && !taken.contains(candidate) {
                 taken.insert(candidate.clone());
+                holders.insert(candidate.clone(), *i);
                 result.insert(types[*i].0.clone(), candidate.clone());
             } else if *len < types[*i].1.len() {
                 next.push((*i, len + 1));
+            } else if let Some(holder) = holders.get(candidate).copied().filter(|holder| {
+                let holder_type = types[*holder].2;
+                // same path (as Rust identifier), but a lower priority
+                *candidate == full_names[*holder]
+                    && types[*i].2.priority < holder_type.priority
+                    && holder_type.fallback_suffix.is_some()
+            }) {
+                // Another type with the same path got the name first, e.g. a choice named after
+                // its only element, while the type of that element still tried shorter names.
+                // The one with the higher priority keeps it, the other one falls back to its
+                // suffix instead of both being numbered.
+                holders.insert(candidate.clone(), *i);
+                result.insert(types[*i].0.clone(), candidate.clone());
+                result.remove(types[holder].0);
+                exhausted.push((holder, candidate.clone()));
             } else {
                 exhausted.push((*i, candidate.clone()));
             }
@@ -412,11 +447,19 @@ fn resolve_type_names(
         pending = next;
     }
 
-    // try the fallback suffixes first, which might also free up the candidate for others
+    // try the fallback suffixes first, which might also free up the candidate for others (only
+    // the types with the highest priority among the ones with the same name keep it)
+    let mut priorities = HashMap::<&str, u8>::new();
+    for (i, candidate) in &exhausted {
+        let priority = priorities.entry(candidate).or_insert(u8::MAX);
+        *priority = (*priority).min(types[*i].2.priority);
+    }
     let mut remaining = Vec::new();
-    for (i, candidate) in exhausted {
+    for (i, candidate) in &exhausted {
+        let (i, candidate) = (*i, candidate.clone());
+        let yields = taken.contains(&candidate) || types[i].2.priority > priorities[&*candidate];
         match types[i].2.fallback_suffix {
-            Some(suffix) if !taken.contains(&format!("{candidate}{suffix}")) => {
+            Some(suffix) if yields && !taken.contains(&format!("{candidate}{suffix}")) => {
                 let name = format!("{candidate}{suffix}");
                 taken.insert(name.clone());
                 result.insert(types[i].0.clone(), name);

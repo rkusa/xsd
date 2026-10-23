@@ -16,4 +16,12 @@
   <invoice>INV-1</invoice>
   <carrier>DHL</carrier>
   <tracking>123</tracking>
+  <placed>
+    <currentValue format="102">20261023</currentValue>
+  </placed>
+  <validity>
+    <currentValue>
+      <days>30</days>
+    </currentValue>
+  </validity>
 </order>

@@ -5,6 +5,30 @@
       <xs:element name="code" type="xs:int" />
     </xs:sequence>
   </xs:complexType>
+  <xs:complexType name="Timestamp">
+    <xs:choice>
+      <xs:element name="currentValue">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="format" type="xs:string" use="required" />
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="Interval">
+    <xs:sequence>
+      <xs:element name="currentValue">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="days" type="xs:int" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
   <xs:element name="order">
     <xs:complexType>
       <xs:sequence>
@@ -54,6 +78,8 @@
           </xs:sequence>
           <xs:element name="drone" type="xs:boolean" />
         </xs:choice>
+        <xs:element name="placed" type="Timestamp" />
+        <xs:element name="validity" type="Interval" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>

@@ -36,7 +36,7 @@ where
                     ),
                     &leaves,
                 );
-                let root_name = ctx.anonymous_group(parent, &leaf_name);
+                let root_name = ctx.anonymous_group(parent, &leaf_name, "Choice");
                 let leaf_name = ctx.get_node_name(&leaf_name, false);
 
                 ctx.add_root(
@@ -77,7 +77,7 @@ where
                     ),
                     &leaves,
                 );
-                let root_name = ctx.anonymous_group(parent, &leaf_name);
+                let root_name = ctx.anonymous_group(parent, &leaf_name, "Sequence");
                 let leaf_name = ctx.get_node_name(&leaf_name, false);
 
                 ctx.add_root(

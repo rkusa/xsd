@@ -30,6 +30,20 @@ fn anonymous_type_names() {
             carrier: "DHL".to_string(),
             tracking: "123".to_string(),
         }),
+        // a choice named like its only element (`TimestampCurrentValue`) has the same path as
+        // the element's type, which needs that name too (`CurrentValue` is ambiguous), so the
+        // choice falls back to a suffix (instead of both being numbered)
+        placed: schema::Timestamp {
+            current_value: schema::TimestampCurrentValueChoice::CurrentValue(
+                schema::TimestampCurrentValue {
+                    current_value: "20261023".to_string(),
+                    format: "102".to_string(),
+                },
+            ),
+        },
+        validity: schema::Interval {
+            current_value: schema::IntervalCurrentValue { days: 30 },
+        },
     };
     assert_eq!(schema::Order::from_xml(xml).unwrap(), expected);
     assert_eq!(String::from_utf8_lossy(&expected.to_xml().unwrap()), xml);
